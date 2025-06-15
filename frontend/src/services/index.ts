@@ -1,0 +1,13 @@
+export * from './api';
+export * from './auth.service';
+export { aiService } from './ai.service';
+export * from './compliance.service';
+export { dashboardService } from './dashboard.service';
+export * from './employeeService';
+export * from './feedback.service';
+export * from './okr.service';
+export * from './rbac.service';
+export * from './reviewsService';
+export { sentimentService } from './sentiment.service';
+export type { SentimentAnalysisResult, SentimentTrend, BiasSummary } from './sentiment.service';
+export * from './vector.service'; 

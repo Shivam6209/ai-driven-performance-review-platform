@@ -1,0 +1,443 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 📘 Product Requirements Document (PRD)
+
+## 🧠 Product Name: **AI-Driven Performance Review & OKR Platform**
+
+---
+
+## 🎯 Executive Summary
+
+Traditional enterprise performance reviews are time-consuming, biased, and lack contextual insights. This platform solves these pain points by streamlining performance management through AI-generated reviews, structured OKRs, continuous feedback, and insightful analytics.
+
+**Key Value Propositions:**
+- Reduce performance review time by 70% through AI assistance
+- Eliminate bias through structured, data-driven feedback generation
+- Improve feedback quality and consistency across the organization
+- Provide real-time insights into team performance and goal progress
+
+---
+
+## 🔧 Core Features (MVP Scope)
+
+### 1. Employee Identity & Access Management
+
+#### 1.1 Role-Based Access Control (RBAC)
+- **HR Admin**: Full system access, user management, analytics
+- **Manager**: Team member reviews, goal setting, feedback management
+- **Employee**: Self-assessments, peer feedback, goal tracking
+- **Executive**: Department-level analytics, strategic OKR oversight
+
+#### 1.2 Employee Namespace Isolation
+- Each employee data exists in isolated namespace
+- Employee ID-based access controls prevent cross-contamination
+- Hierarchical data structure with strict parent-child relationships
+
+### 2. OKR & Goal Management System
+
+#### 2.1 Hierarchical OKR Structure
+```
+Company OKRs
+├── Department OKRs
+│   ├── Team OKRs
+│   │   └── Individual OKRs
+```
+
+#### 2.2 Goal Tracking Features
+- **Visual Progress Indicators**: 0-100% completion with color coding
+- **Skill/Project Tagging**: Categorize goals by competency areas
+- **Update Timeline**: Chronological progress updates with comments
+- **Dependency Mapping**: Link goals to team/company objectives
+
+#### 2.3 Goal Analytics
+- Completion rate tracking
+- Time-to-completion analysis
+- Goal difficulty scoring
+- Achievement pattern recognition
+
+### 3. Continuous Feedback System
+
+#### 3.1 Feedback Types
+- **Peer-to-Peer**: Cross-functional team feedback
+- **Upward Feedback**: Employee to manager insights
+- **Downward Feedback**: Manager to direct report guidance
+- **Self-Reflection**: Personal performance assessment
+
+#### 3.2 Feedback Management
+- **Visibility Controls**: Public, private, or manager-only options
+- **Skill-Based Tagging**: Link feedback to specific competencies
+- **Project Context**: Associate feedback with specific initiatives
+- **Threading**: Conversational feedback with follow-ups
+
+### 4. AI-Powered Performance Review Engine
+
+#### 4.1 Review Generation Pipeline
+1. **Data Collection**: Aggregate employee context from past 12 months
+2. **Real-time Validation**: Verify data integrity during AI processing
+3. **Content Generation**: Create structured review sections
+4. **Quality Assurance**: Validate output against source data
+5. **Human Refinement**: Enable easy editing and approval
+
+#### 4.2 AI Generation Components
+
+##### 4.2.1 Peer Review Generator
+- **Input Sources**: Tagged feedback history, goal performance, project summaries
+- **Output**: Structured peer review with strengths, areas for growth, specific examples
+- **Validation**: All generated content must reference verifiable source data
+
+##### 4.2.2 Self-Assessment Summarizer
+- **Input**: Employee-written self-assessments and goal updates
+- **Output**: Condensed highlights, key achievements, growth areas
+- **Format**: Bullet-point summaries with quantitative metrics where available
+
+##### 4.2.3 Manager Review Assistant
+- **Input**: Team member performance data, feedback history, goal completion
+- **Output**: Comprehensive manager review with development recommendations
+- **Features**: Performance trend analysis, comparative team insights
+
+#### 4.3 AI Safety & Quality Controls
+
+##### 4.3.1 Real-time Validation During Generation
+- **Source Verification**: Every generated claim must have traceable source
+- **Employee Identity Validation**: Strict employee ID checks prevent data mixing
+- **Relationship Verification**: Confirm reviewer-reviewee working relationships
+- **Data Freshness Check**: Only use data from past 12 months
+- **Confidence Scoring**: Generate confidence levels for each content section
+
+##### 4.3.2 Fallback Mechanisms
+- **Low Confidence Scenarios**: Leave review sections blank for human completion
+- **Insufficient Data**: Display "Insufficient data available" message
+- **Validation Failures**: Revert to empty templates with guidance prompts
+
+### 5. Advanced Analytics & Reporting
+
+#### 5.1 Performance Dashboards
+- **Individual View**: Personal goal progress, feedback trends, skill development
+- **Manager View**: Team performance, review completion rates, feedback quality
+- **HR Analytics**: Organization-wide performance trends, goal alignment metrics
+- **Executive Dashboard**: Strategic OKR progress, department comparisons
+
+#### 5.2 Sentiment Analysis Engine
+- **Feedback Tone Analysis**: Positive, neutral, constructive, concerning
+- **Quality Scoring**: Specificity, actionability, bias detection
+- **Trend Monitoring**: Sentiment changes over time per employee/team
+- **Alert System**: Flag concerning patterns or significant sentiment shifts
+
+---
+
+## 🏗️ Technical Architecture
+
+### 1. System Architecture Overview
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Next.js       │    │    NestJS       │    │   PostgreSQL    │
+│   Frontend      │◄──►│   Backend API   │◄──►│   Primary DB    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       
+         ▼                       ▼                       
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Firebase      │    │   LangChain     │    │   Pinecone      │
+│   Real-time     │    │   AI Engine     │    │   Vector DB     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+#### 2 Data Retention Policy
+- **AI-Generated Drafts**: Automatically deleted after human approval
+- **Final Reviews**: Retained permanently for compliance
+- **Feedback Data**: Retained for 3 years for AI training
+- **Goal Data**: Retained indefinitely for trend analysis
+
+### 3. AI Integration Architecture
+
+#### 3.1 Vector Database Structure (Pinecone)
+
+```typescript
+interface EmployeeEmbedding {
+  id: string; // Format: "emp_{employee_id}_{content_type}_{timestamp}"
+  employee_id: string; // Strict namespace isolation
+  content_type: 'feedback' | 'goal' | 'review' | 'project';
+  embedding: number[]; // 1536-dimensional vector (OpenAI)
+  metadata: {
+    created_at: string;
+    source_id: string;
+    tags: string[];
+    visibility: string;
+    content_preview: string; // First 100 chars for debugging
+  };
+}
+```
+
+#### 3.2 Embedding Generation Strategy
+- **Namespace Isolation**: Each employee's data stored in separate namespace
+- **Content Chunking**: Split large documents into 500-token chunks
+- **Metadata Tagging**: Rich metadata for precise retrieval
+- **Access Control**: Embedding-level permission validation
+
+#### 3.3 AI Generation Pipeline
+
+```typescript
+class ReviewGenerator {
+  async generatePeerReview(employeeId: string, revieweeId: string): Promise<ReviewContent> {
+    // Step 1: Validate relationship
+    const relationship = await this.validateWorkingRelationship(employeeId, revieweeId);
+    if (!relationship.isValid) throw new ValidationError('No working relationship found');
+    
+    // Step 2: Retrieve relevant context (12 months)
+    const context = await this.retrieveEmployeeContext(revieweeId, '12months');
+    
+    // Step 3: Real-time validation during generation
+    const generatedContent = await this.generateWithValidation(context, {
+      template: 'peer_review',
+      confidence_threshold: 0.7,
+      max_tokens: 500
+    });
+    
+    // Step 4: Source verification
+    if (!this.verifyAllClaims(generatedContent, context)) {
+      return { content: '', confidence: 0, sources: [] };
+    }
+    
+    return generatedContent;
+  }
+}
+```
+
+### 4. Frontend Architecture
+
+#### 4.1 Next.js Application Structure
+```
+src/
+├── components/
+│   ├── reviews/
+│   │   ├── AIReviewEditor.tsx    # Easy edit interface for AI content
+│   │   ├── ReviewTemplate.tsx    # Structured review forms
+│   │   └── SourceReference.tsx   # Show AI sources (dev only)
+│   ├── okrs/
+│   │   ├── OKRProgress.tsx       # Visual progress tracking
+│   │   └── GoalEditor.tsx        # Goal creation/editing
+│   └── feedback/
+│       ├── FeedbackForm.tsx      # Continuous feedback input
+│       └── FeedbackTimeline.tsx  # Chronological feedback view
+├── pages/
+│   ├── dashboard/               # Role-based dashboards
+│   ├── reviews/                # Review management
+│   └── analytics/              # Performance analytics
+└── utils/
+    ├── ai-integration.ts       # AI service integration
+    └── validation.ts           # Client-side validation
+```
+
+#### 4.2 AI Content Editing Interface
+- **Inline Editing**: Click-to-edit generated content
+- **Section-by-Section**: Edit individual review sections
+- **Confidence Indicators**: Hidden from users, used for internal quality control
+- **Save Drafts**: Auto-save functionality for work-in-progress reviews
+
+---
+
+## 🔄 User Workflows
+
+### 1. Performance Review Cycle
+
+#### 1.1 Manager-Initiated Review
+1. **Setup**: Manager creates review cycle for team members
+2. **AI Generation**: System generates initial review drafts
+3. **Manager Review**: Manager edits and approves AI-generated content
+4. **Employee Input**: Employee completes self-assessment
+5. **Peer Feedback**: Collect peer reviews (AI-assisted)
+6. **Finalization**: Manager finalizes and submits review
+7. **Storage**: Only final approved version stored permanently
+
+#### 1.2 Self-Assessment Workflow
+1. **Goal Review**: Employee reviews OKR progress
+2. **Achievement Highlights**: Document key accomplishments
+3. **AI Summarization**: System creates summary of employee input
+4. **Review & Edit**: Employee reviews and edits AI summary
+5. **Submission**: Final self-assessment submitted to manager
+
+### 2. Continuous Feedback Loop
+
+#### 2.1 Giving Feedback
+1. **Context Selection**: Choose employee and project/skill context
+2. **Feedback Input**: Write feedback or use AI suggestions
+3. **Visibility Setting**: Set feedback visibility (public/private/manager-only)
+4. **Tag Assignment**: Tag feedback with relevant skills/projects
+5. **Delivery**: Feedback delivered to recipient and manager
+
+#### 2.2 Receiving Feedback
+1. **Notification**: Real-time notification of new feedback
+2. **Review**: Read feedback in context of goals and projects
+3. **Response**: Optional response or clarification request
+4. **Action Planning**: Create action items based on feedback
+
+### 3. OKR Management Workflow
+
+#### 3.1 Goal Setting
+1. **Template Selection**: Choose from role-based OKR templates
+2. **AI Suggestions**: Review AI-suggested goals based on role/team
+3. **Customization**: Modify and personalize suggested goals
+4. **Alignment Check**: Ensure alignment with team/company OKRs
+5. **Approval**: Manager approves individual OKRs
+
+#### 3.2 Progress Tracking
+1. **Regular Updates**: Weekly/bi-weekly progress updates
+2. **Visual Tracking**: Real-time progress indicators
+3. **Blockers**: Document and escalate obstacles
+4. **Milestone Celebration**: Acknowledge goal completions
+
+---
+
+## 🎨 User Interface Design
+
+### 1. Design Principles
+- **Simplicity**: Clean, uncluttered interface focusing on core tasks
+- **Transparency**: Clear indication of AI-generated vs. human content
+- **Efficiency**: Minimize clicks and form fields for common actions
+- **Accessibility**: WCAG 2.1 AA compliance for inclusive design
+
+### 2. Key UI Components
+
+#### 2.1 AI Review Editor
+```typescript
+interface AIReviewEditorProps {
+  generatedContent: string;
+  editable: boolean;
+  onSave: (content: string) => void;
+  showSources?: boolean; // Hidden in production
+}
+```
+
+#### 2.2 Progress Indicators
+- **OKR Progress**: Circular progress with percentage
+- **Review Completion**: Linear progress bar with steps
+- **Feedback Activity**: Activity feed with timeline
+
+#### 2.3 Dashboard Widgets
+- **My Goals**: Personal OKR status overview
+- **Recent Feedback**: Latest feedback received/given
+- **Review Status**: Pending reviews and deadlines
+- **Team Performance**: Manager view of team progress
+
+---
+
+## 🔒 Security & Privacy
+
+### 1. Data Protection
+- **Encryption**: All data encrypted in transit and at rest
+- **Access Logging**: Comprehensive audit trail for all data access
+- **Employee Isolation**: Strict namespace separation in all systems
+- **Data Minimization**: Only store necessary data for functionality
+
+### 2. AI Safety Measures
+- **Source Verification**: All AI claims must have verifiable sources
+- **Real-time Validation**: Continuous validation during content generation
+- **Human Oversight**: All AI content requires human approval
+- **Error Handling**: Graceful degradation when AI confidence is low
+
+### 3. Privacy Controls
+- **Feedback Visibility**: Granular controls for feedback sharing
+- **Review Access**: Role-based access to performance reviews
+- **Data Export**: Employees can export their performance data
+- **Right to Delete**: Support for data deletion requests
+
+---
+
+## 📊 Success Metrics & KPIs
+
+### 1. Efficiency Metrics
+- **Review Completion Time**: Target 70% reduction from baseline
+- **Feedback Frequency**: Increase in continuous feedback volume
+- **Goal Setting Speed**: Time from role assignment to OKR completion
+- **User Adoption Rate**: % of employees actively using the platform
+
+### 2. Quality Metrics
+- **Review Quality Score**: Manager-rated quality of AI-generated content
+- **Edit Frequency**: % of AI content that requires human modification
+- **User Satisfaction**: Net Promoter Score for platform experience
+- **Goal Achievement Rate**: % of OKRs completed on time
+
+### 3. AI Performance Metrics
+- **Generation Success Rate**: % of successful AI content generation
+- **Confidence Score Distribution**: Average confidence of generated content
+- **Validation Pass Rate**: % of AI content passing real-time validation
+- **Human Override Rate**: Frequency of AI suggestions being rejected
+
+---
+
+## 🚀 Implementation Roadmap
+
+### Phase 1: Foundation
+- **Core Infrastructure**: Database, authentication, basic RBAC
+- **Employee Management**: User profiles, org chart, role assignment
+- **Basic OKR System**: Goal creation, progress tracking
+- **Simple Feedback**: Basic feedback submission and viewing
+
+### Phase 2: AI Integration
+- **Vector Database Setup**: Pinecone integration, embedding generation
+- **AI Review Generator**: Basic AI-powered review generation
+- **Real-time Validation**: Implement AI safety measures
+- **Edit Interface**: User-friendly AI content editing
+
+### Phase 3: Advanced Features
+- **Sentiment Analysis**: Feedback tone and quality scoring
+- **Advanced Analytics**: Performance dashboards and insights
+- **Mobile Optimization**: Responsive design and PWA features
+- **Performance Tuning**: Optimize AI generation speed and accuracy
+
+### Phase 4: Scale & Polish (Months 10-12)
+- **Enterprise Features**: Advanced RBAC, compliance reporting
+- **Integration APIs**: Third-party integrations for HR systems
+- **Advanced AI**: Improved models, better context understanding
+- **User Experience**: Polish UI/UX based on user feedback
+
+---
+
+## 💰 Technical Considerations
+
+### 1. Cost Optimization
+- **AI Usage**: Implement caching for frequently generated content
+- **Vector Storage**: Optimize embedding storage and retrieval costs
+- **Database Queries**: Efficient indexing and query optimization
+- **Infrastructure**: Auto-scaling based on usage patterns
+
+### 2. Performance Requirements
+- **Response Time**: < 2 seconds for AI content generation
+- **Availability**: 99.9% uptime SLA
+- **Scalability**: Support for 10,000+ employees
+- **Concurrent Users**: Handle 1,000+ simultaneous users
+
+### 3. Compliance & Governance
+- **Data Residency**: Support for regional data storage requirements
+- **Audit Trail**: Comprehensive logging for compliance reporting
+- **Backup & Recovery**: Daily backups with 30-day retention
+- **Security Scanning**: Regular vulnerability assessments
+
+---
+
+## 🎯 Success Criteria
+
+### MVP Success Metrics
+1. **User Adoption**: 80% of employees complete at least one review cycle
+2. **Time Savings**: 60% reduction in review completion time
+3. **Quality Score**: Average review quality rating of 4.0/5.0
+4. **AI Accuracy**: 85% of AI-generated content approved without major edits
+5. **User Satisfaction**: Net Promoter Score of 7.0 or higher
+
+### Long-term Success Indicators
+1. **Performance Improvement**: Measurable improvement in goal achievement rates
+2. **Feedback Culture**: 3x increase in continuous feedback frequency
+3. **Manager Efficiency**: 50% reduction in performance management overhead
+4. **Employee Development**: Improved career progression and skill development
+5. **Organizational Alignment**: Better alignment between individual and company goals
+
+---
+
+## 🔚 Conclusion
+
+This AI-Driven Performance Review & OKR Platform represents a significant advancement in enterprise performance management. By combining the efficiency of AI with the insight of human judgment, we create a system that saves time while improving the quality and consistency of performance evaluations.
+
+
+The platform's focus on data integrity, user experience, and continuous improvement ensures that it will evolve with organizational needs while maintaining the highest standards of accuracy and privacy. Through careful implementation of AI safety measures and human oversight, we can deliver the benefits of automation while preserving the human element essential to effective performance management.

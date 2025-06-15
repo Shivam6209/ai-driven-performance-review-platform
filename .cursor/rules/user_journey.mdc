@@ -1,0 +1,89 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 👥 User Journeys: AI-Powered Performance Management Platform
+
+---
+
+## 👩‍💼 HR Admin Journey
+
+### 🔐 Onboarding
+- Logs in via enterprise SSO or secure registration.
+- Sets up departments, teams, and company-level OKRs.
+- Invites employees and managers; assigns roles.
+
+### 🏗️ Configuration
+- Creates performance cycles (quarterly, biannual).
+- Defines review templates, feedback types, and rating scales.
+- Sets organizational goals and cascading OKRs.
+
+### 📊 Management
+- Monitors review progress for all departments.
+- Adds or updates employee details.
+- Manages access permissions via RBAC.
+
+### 📈 Insights
+- Views company-wide analytics on performance trends, OKR alignment, sentiment analysis.
+- Exports reports for leadership and compliance.
+
+### 🤖 AI Usage
+- Reviews AI-suggested summaries for feedback calibration.
+- Approves AI-generated nudges/reminders for managers and employees.
+
+---
+
+## 👨‍💼 Manager Journey
+
+### 🛂 Access
+- Logs in and sees dashboard with team overview and OKR status.
+- Can view, edit, and assign goals to direct reports.
+
+### 🎯 Goal Setting
+- Aligns team goals with department/company OKRs.
+- Edits OKRs collaboratively with employees.
+- Monitors progress in real-time.
+
+### 📝 Performance Reviews
+- Initiates mid-cycle and end-cycle reviews.
+- Writes feedback or reviews AI-generated drafts.
+- Reviews 360° feedback submitted by peers.
+
+### 💬 Feedback
+- Provides continuous feedback to team members.
+- Uses AI to rephrase or suggest improvement tips.
+
+### 📊 Reports
+- Tracks individual performance trends.
+- Views AI-highlighted performance risks or strengths.
+
+---
+
+## 👨‍💻 Employee Journey
+
+### 🧾 Onboarding
+- Registers or receives invite from HR.
+- Sets up profile and links to department/team.
+
+### 🎯 OKRs
+- Sets personal OKRs aligned with manager/department.
+- Tracks and updates progress regularly.
+
+### 💬 Feedback
+- Gives and receives peer-to-peer feedback.
+- Views AI-suggested feedback improvements.
+
+### 📝 Reviews
+- Completes self-assessment during review cycle.
+- Views manager reviews and feedback.
+- Can request clarification or rebuttal.
+
+### 📚 Growth
+- Gets personalized insights for improvement.
+- Tracks historical performance, goals, and feedback trends.
+
+### 🔒 Privacy
+- Can control visibility of self-feedback.
+- Sees what is shared with HR/Manager.
+

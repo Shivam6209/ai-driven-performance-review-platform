@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // OKRs - users can only access their own OKRs
+    match /okrs/{okrId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Feedback - users can read feedback sent to them and write feedback to others
+    match /feedback/{feedbackId} {
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.toUserId || 
+         request.auth.uid == resource.data.fromUserId);
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.fromUserId;
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.fromUserId;
+    }
+    
+    // Reviews - employees can read their own reviews, managers can read/write reviews for their team
+    match /reviews/{reviewId} {
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.employeeId || 
+         request.auth.uid == resource.data.managerId);
+      allow write: if request.auth != null && 
+        request.auth.uid == resource.data.managerId;
+      allow create: if request.auth != null && 
+        (request.auth.uid == request.resource.data.employeeId || 
+         request.auth.uid == request.resource.data.managerId);
+    }
+    
+    // Notifications - users can only read their own notifications
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+    }
+    
+    // Analytics data - read-only for authenticated users
+    match /analytics/{document=**} {
+      allow read: if request.auth != null;
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

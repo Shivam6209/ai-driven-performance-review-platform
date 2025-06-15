@@ -1,0 +1,534 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+-- ====================================================================
+-- AI-Driven Performance Review & OKR Platform - Database Schema
+-- ====================================================================
+
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ====================================================================
+-- 1. CORE USER MANAGEMENT
+-- ====================================================================
+
+-- Departments/Teams structure
+CREATE TABLE departments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    parent_department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
+    head_id UUID, -- Will reference employees(id) after employees table is created
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Core employee information
+CREATE TABLE employees (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_code VARCHAR(50) UNIQUE NOT NULL, -- Internal employee ID
+    email VARCHAR(255) UNIQUE NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    display_name VARCHAR(200),
+    job_title VARCHAR(200),
+    department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
+    manager_id UUID REFERENCES employees(id) ON DELETE SET NULL,
+    hire_date DATE,
+    employment_status VARCHAR(20) DEFAULT 'active' CHECK (employment_status IN ('active', 'inactive', 'terminated')),
+    role VARCHAR(20) DEFAULT 'employee' CHECK (role IN ('hr_admin', 'manager', 'employee', 'executive')),
+    profile_image_url TEXT,
+    timezone VARCHAR(50) DEFAULT 'UTC',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add foreign key constraint for department head after employees table creation
+ALTER TABLE departments 
+ADD CONSTRAINT fk_departments_head 
+FOREIGN KEY (head_id) REFERENCES employees(id) ON DELETE SET NULL;
+
+-- Employee authentication
+CREATE TABLE employee_auth (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id UUID UNIQUE REFERENCES employees(id) ON DELETE CASCADE,
+    password_hash VARCHAR(255) NOT NULL,
+    last_login TIMESTAMP WITH TIME ZONE,
+    failed_login_attempts INTEGER DEFAULT 0,
+    locked_until TIMESTAMP WITH TIME ZONE,
+    password_reset_token VARCHAR(255),
+    password_reset_expires TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Employee reporting relationships (for complex org structures)
+CREATE TABLE reporting_relationships (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    manager_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    relationship_type VARCHAR(20) DEFAULT 'direct' CHECK (relationship_type IN ('direct', 'dotted_line', 'project_lead')),
+    start_date DATE NOT NULL,
+    end_date DATE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(employee_id, manager_id, relationship_type)
+);
+
+-- ====================================================================
+-- 2. OKR & GOAL MANAGEMENT SYSTEM
+-- ====================================================================
+
+-- OKR Categories and Templates
+CREATE TABLE okr_categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    color_code VARCHAR(7), -- Hex color codes
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Main OKRs table
+CREATE TABLE okrs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    parent_okr_id UUID REFERENCES okrs(id) ON DELETE SET NULL, -- For hierarchical OKRs
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    okr_type VARCHAR(20) DEFAULT 'individual' CHECK (okr_type IN ('company', 'department', 'team', 'individual')),
+    category_id UUID REFERENCES okr_categories(id) ON DELETE SET NULL,
+    target_value DECIMAL(15,2),
+    current_value DECIMAL(15,2) DEFAULT 0,
+    unit_of_measure VARCHAR(50), -- e.g., 'percentage', 'count', 'currency'
+    weight DECIMAL(3,2) DEFAULT 1.0 CHECK (weight >= 0 AND weight <= 1), -- Importance weight
+    priority VARCHAR(10) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
+    start_date DATE NOT NULL,
+    due_date DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('draft', 'active', 'completed', 'cancelled', 'overdue')),
+    completion_percentage DECIMAL(5,2) DEFAULT 0 CHECK (completion_percentage >= 0 AND completion_percentage <= 100),
+    approved_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+    approved_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- OKR progress updates and comments
+CREATE TABLE okr_updates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    okr_id UUID REFERENCES okrs(id) ON DELETE CASCADE,
+    updated_by UUID REFERENCES employees(id) ON DELETE CASCADE,
+    update_text TEXT NOT NULL,
+    previous_value DECIMAL(15,2),
+    new_value DECIMAL(15,2),
+    completion_percentage DECIMAL(5,2),
+    status_change VARCHAR(50), -- e.g., "active -> completed"
+    blockers TEXT, -- Documented obstacles
+    next_steps TEXT,
+    attachments JSONB, -- File URLs and metadata
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- OKR tags for categorization
+CREATE TABLE okr_tags (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) UNIQUE NOT NULL,
+    tag_type VARCHAR(20) DEFAULT 'skill' CHECK (tag_type IN ('skill', 'project', 'value', 'competency')),
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Many-to-many relationship between OKRs and tags
+CREATE TABLE okr_tag_assignments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    okr_id UUID REFERENCES okrs(id) ON DELETE CASCADE,
+    tag_id UUID REFERENCES okr_tags(id) ON DELETE CASCADE,
+    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(okr_id, tag_id)
+);
+
+-- ====================================================================
+-- 3. CONTINUOUS FEEDBACK SYSTEM
+-- ====================================================================
+
+-- Feedback entries
+CREATE TABLE feedback (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    giver_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    receiver_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    feedback_type VARCHAR(20) DEFAULT 'general' CHECK (feedback_type IN ('general', 'appreciation', 'constructive', 'goal_related', 'project_related')),
+    visibility VARCHAR(20) DEFAULT 'private' CHECK (visibility IN ('public', 'private', 'manager_only', 'hr_only')),
+    context_type VARCHAR(20), -- 'project', 'goal', 'general'
+    context_id UUID, -- Reference to project/goal/etc
+    sentiment_score DECIMAL(3,2), -- AI-generated sentiment (-1 to 1)
+    quality_score DECIMAL(3,2), -- AI-generated quality score (0 to 1)
+    is_anonymous BOOLEAN DEFAULT FALSE,
+    parent_feedback_id UUID REFERENCES feedback(id) ON DELETE SET NULL, -- For threaded conversations
+    attachments JSONB, -- File attachments metadata
+    read_at TIMESTAMP WITH TIME ZONE,
+    acknowledged_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Feedback tags (reuse okr_tags table)
+CREATE TABLE feedback_tag_assignments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    feedback_id UUID REFERENCES feedback(id) ON DELETE CASCADE,
+    tag_id UUID REFERENCES okr_tags(id) ON DELETE CASCADE,
+    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(feedback_id, tag_id)
+);
+
+-- Feedback reactions (like/helpful/etc)
+CREATE TABLE feedback_reactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    feedback_id UUID REFERENCES feedback(id) ON DELETE CASCADE,
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    reaction_type VARCHAR(20) CHECK (reaction_type IN ('helpful', 'insightful', 'actionable')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(feedback_id, employee_id, reaction_type)
+);
+
+-- ====================================================================
+-- 4. PERFORMANCE REVIEW SYSTEM
+-- ====================================================================
+
+-- Review cycles (quarterly, annual, etc.)
+CREATE TABLE review_cycles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    cycle_type VARCHAR(20) DEFAULT 'quarterly' CHECK (cycle_type IN ('quarterly', 'semi_annual', 'annual', 'project_based')),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    submission_deadline DATE NOT NULL,
+    approval_deadline DATE NOT NULL,
+    department_id UUID REFERENCES departments(id) ON DELETE SET NULL, -- NULL means company-wide
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'completed', 'cancelled')),
+    created_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Individual performance reviews
+CREATE TABLE performance_reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    reviewer_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    review_cycle_id UUID REFERENCES review_cycles(id) ON DELETE CASCADE,
+    review_type VARCHAR(20) DEFAULT 'manager' CHECK (review_type IN ('self', 'manager', 'peer', 'upward', '360')),
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'in_progress', 'submitted', 'approved', 'rejected')),
+    overall_rating DECIMAL(3,2), -- Overall performance rating
+    submitted_at TIMESTAMP WITH TIME ZONE,
+    approved_at TIMESTAMP WITH TIME ZONE,
+    approved_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+    due_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(employee_id, reviewer_id, review_cycle_id, review_type)
+);
+
+-- Review section templates (customizable review structures)
+CREATE TABLE review_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    review_type VARCHAR(20) CHECK (review_type IN ('self', 'manager', 'peer', 'upward', '360')),
+    department_id UUID REFERENCES departments(id) ON DELETE SET NULL, -- Department-specific templates
+    is_default BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Individual sections within review templates
+CREATE TABLE review_template_sections (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    template_id UUID REFERENCES review_templates(id) ON DELETE CASCADE,
+    section_name VARCHAR(200) NOT NULL,
+    section_description TEXT,
+    section_type VARCHAR(20) DEFAULT 'text' CHECK (section_type IN ('text', 'rating', 'multiple_choice', 'goal_review')),
+    is_required BOOLEAN DEFAULT FALSE,
+    max_length INTEGER,
+    rating_scale INTEGER, -- For rating sections (1-5, 1-10, etc)
+    display_order INTEGER NOT NULL,
+    ai_generation_enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Actual review section content
+CREATE TABLE review_sections (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    review_id UUID REFERENCES performance_reviews(id) ON DELETE CASCADE,
+    template_section_id UUID REFERENCES review_template_sections(id) ON DELETE SET NULL,
+    section_name VARCHAR(200) NOT NULL,
+    content TEXT,
+    rating_value DECIMAL(3,2),
+    is_ai_generated BOOLEAN DEFAULT FALSE,
+    ai_confidence_score DECIMAL(3,2), -- Internal use only
+    ai_model_version VARCHAR(50),
+    ai_generation_timestamp TIMESTAMP WITH TIME ZONE,
+    human_edited BOOLEAN DEFAULT FALSE,
+    edit_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Track review workflow status
+CREATE TABLE review_workflow_steps (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    review_id UUID REFERENCES performance_reviews(id) ON DELETE CASCADE,
+    step_name VARCHAR(100) NOT NULL,
+    step_type VARCHAR(20) CHECK (step_type IN ('draft', 'ai_generation', 'human_review', 'submission', 'approval')),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'skipped', 'failed')),
+    assigned_to UUID REFERENCES employees(id) ON DELETE SET NULL,
+    completed_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+    due_date TIMESTAMP WITH TIME ZONE,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ====================================================================
+-- 5. AI INTEGRATION & CONTENT MANAGEMENT
+-- ====================================================================
+
+-- AI model configurations and versions
+CREATE TABLE ai_models (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    model_name VARCHAR(100) NOT NULL,
+    model_version VARCHAR(50) NOT NULL,
+    provider VARCHAR(50) NOT NULL, -- 'openai', 'anthropic', etc.
+    model_type VARCHAR(20) CHECK (model_type IN ('embedding', 'generation', 'classification')),
+    configuration JSONB, -- Model-specific configuration
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(model_name, model_version)
+);
+
+-- AI-generated content tracking (for audit and improvement)
+CREATE TABLE ai_content_generations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    content_type VARCHAR(50) NOT NULL, -- 'peer_review', 'self_assessment', 'okr_suggestion'
+    target_entity_type VARCHAR(50) NOT NULL, -- 'review_section', 'feedback', 'okr'
+    target_entity_id UUID NOT NULL,
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    model_id UUID REFERENCES ai_models(id) ON DELETE SET NULL,
+    prompt_template TEXT,
+    context_data JSONB, -- Source data used for generation
+    generated_content TEXT,
+    confidence_score DECIMAL(3,2),
+    validation_passed BOOLEAN,
+    validation_errors JSONB,
+    human_accepted BOOLEAN,
+    human_edited BOOLEAN,
+    final_content TEXT, -- Content after human editing
+    source_references JSONB, -- References to source data
+    generation_time_ms INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Vector embeddings metadata (actual vectors stored in Pinecone)
+CREATE TABLE content_embeddings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_namespace VARCHAR(100) NOT NULL, -- Format: emp_{employee_id}
+    content_type VARCHAR(50) NOT NULL, -- 'feedback', 'goal', 'review', 'project'
+    source_entity_type VARCHAR(50) NOT NULL,
+    source_entity_id UUID NOT NULL,
+    pinecone_id VARCHAR(200) UNIQUE NOT NULL, -- ID in Pinecone vector DB
+    content_preview TEXT, -- First 100 chars for debugging
+    embedding_model_id UUID REFERENCES ai_models(id) ON DELETE SET NULL,
+    metadata JSONB, -- Additional metadata stored in Pinecone
+    visibility VARCHAR(20) DEFAULT 'private',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE -- For automatic cleanup
+);
+
+-- AI validation rules and checks
+CREATE TABLE ai_validation_rules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    rule_name VARCHAR(100) NOT NULL,
+    rule_type VARCHAR(50) CHECK (rule_type IN ('source_verification', 'bias_detection', 'quality_check', 'relationship_validation')),
+    content_types VARCHAR(100)[], -- Array of content types this rule applies to
+    rule_configuration JSONB,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ====================================================================
+-- 6. ANALYTICS & REPORTING
+-- ====================================================================
+
+-- Pre-computed analytics for performance
+CREATE TABLE performance_analytics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entity_type VARCHAR(50) NOT NULL, -- 'employee', 'department', 'company'
+    entity_id UUID NOT NULL,
+    metric_name VARCHAR(100) NOT NULL,
+    metric_value DECIMAL(15,4),
+    metric_metadata JSONB,
+    calculation_date DATE NOT NULL,
+    calculation_period VARCHAR(20), -- 'daily', 'weekly', 'monthly', 'quarterly'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(entity_type, entity_id, metric_name, calculation_date, calculation_period)
+);
+
+-- Sentiment analysis results
+CREATE TABLE sentiment_analysis (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    content_type VARCHAR(50) NOT NULL, -- 'feedback', 'review_section'
+    content_id UUID NOT NULL,
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    sentiment_score DECIMAL(3,2) NOT NULL, -- -1 to 1
+    sentiment_label VARCHAR(20), -- 'positive', 'neutral', 'negative'
+    confidence DECIMAL(3,2),
+    emotions JSONB, -- Detailed emotion breakdown
+    quality_metrics JSONB, -- Specificity, constructiveness, etc.
+    model_id UUID REFERENCES ai_models(id) ON DELETE SET NULL,
+    analyzed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ====================================================================
+-- 7. SYSTEM CONFIGURATION & SETTINGS
+-- ====================================================================
+
+-- Company-wide settings
+CREATE TABLE system_settings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value JSONB NOT NULL,
+    setting_type VARCHAR(50) DEFAULT 'general',
+    description TEXT,
+    is_sensitive BOOLEAN DEFAULT FALSE, -- For password/API keys
+    updated_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Audit log for important actions
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id UUID REFERENCES employees(id) ON DELETE SET NULL,
+    action VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(50),
+    entity_id UUID,
+    old_values JSONB,
+    new_values JSONB,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ====================================================================
+-- 8. FILE ATTACHMENTS & MEDIA
+-- ====================================================================
+
+-- File attachments for various entities
+CREATE TABLE attachments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entity_type VARCHAR(50) NOT NULL, -- 'feedback', 'okr_update', 'review'
+    entity_id UUID NOT NULL,
+    uploaded_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+    filename VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    file_size BIGINT NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    storage_url TEXT NOT NULL, -- Firebase Storage URL
+    is_public BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ====================================================================
+-- 9. INDEXES FOR PERFORMANCE
+-- ====================================================================
+
+-- Employee indexes
+CREATE INDEX idx_employees_email ON employees(email);
+CREATE INDEX idx_employees_department ON employees(department_id);
+CREATE INDEX idx_employees_manager ON employees(manager_id);
+CREATE INDEX idx_employees_active ON employees(is_active);
+
+-- OKR indexes
+CREATE INDEX idx_okrs_employee ON okrs(employee_id);
+CREATE INDEX idx_okrs_parent ON okrs(parent_okr_id);
+CREATE INDEX idx_okrs_status ON okrs(status);
+CREATE INDEX idx_okrs_due_date ON okrs(due_date);
+CREATE INDEX idx_okr_updates_okr ON okr_updates(okr_id);
+CREATE INDEX idx_okr_updates_date ON okr_updates(created_at);
+
+-- Feedback indexes
+CREATE INDEX idx_feedback_giver ON feedback(giver_id);
+CREATE INDEX idx_feedback_receiver ON feedback(receiver_id);
+CREATE INDEX idx_feedback_visibility ON feedback(visibility);
+CREATE INDEX idx_feedback_created ON feedback(created_at);
+CREATE INDEX idx_feedback_sentiment ON feedback(sentiment_score);
+
+-- Performance review indexes
+CREATE INDEX idx_reviews_employee ON performance_reviews(employee_id);
+CREATE INDEX idx_reviews_reviewer ON performance_reviews(reviewer_id);
+CREATE INDEX idx_reviews_cycle ON performance_reviews(review_cycle_id);
+CREATE INDEX idx_reviews_status ON performance_reviews(status);
+CREATE INDEX idx_review_sections_review ON review_sections(review_id);
+
+-- AI content indexes
+CREATE INDEX idx_ai_generations_employee ON ai_content_generations(employee_id);
+CREATE INDEX idx_ai_generations_type ON ai_content_generations(content_type);
+CREATE INDEX idx_ai_generations_created ON ai_content_generations(created_at);
+CREATE INDEX idx_embeddings_namespace ON content_embeddings(employee_namespace);
+CREATE INDEX idx_embeddings_type ON content_embeddings(content_type);
+
+-- Analytics indexes
+CREATE INDEX idx_analytics_entity ON performance_analytics(entity_type, entity_id);
+CREATE INDEX idx_analytics_metric ON performance_analytics(metric_name);
+CREATE INDEX idx_analytics_date ON performance_analytics(calculation_date);
+CREATE INDEX idx_sentiment_employee ON sentiment_analysis(employee_id);
+CREATE INDEX idx_sentiment_content ON sentiment_analysis(content_type, content_id);
+
+-- Audit log indexes
+CREATE INDEX idx_audit_employee ON audit_logs(employee_id);
+CREATE INDEX idx_audit_action ON audit_logs(action);
+CREATE INDEX idx_audit_created ON audit_logs(created_at);
+
+-- ====================================================================
+-- 10. INITIAL DATA SETUP
+-- ====================================================================
+
+-- Insert default OKR categories
+INSERT INTO okr_categories (name, description, color_code) VALUES
+('Leadership', 'Leadership and people management goals', '#FF6B6B'),
+('Technical Skills', 'Technology and technical competency goals', '#4ECDC4'),
+('Business Impact', 'Revenue, growth, and business metrics', '#45B7D1'),
+('Personal Development', 'Learning and skill development goals', '#96CEB4'),
+('Team Collaboration', 'Teamwork and cross-functional goals', '#FFEAA7'),
+('Innovation', 'Creative and innovative project goals', '#DDA0DD'),
+('Customer Focus', 'Customer satisfaction and experience goals', '#98D8C8');
+
+-- Insert default review templates
+INSERT INTO review_templates (name, description, review_type, is_default) VALUES
+('Standard Self Assessment', 'Default template for employee self-assessments', 'self', true),
+('Manager Review Template', 'Default template for manager reviews of direct reports', 'manager', true),
+('Peer Review Template', 'Default template for peer feedback', 'peer', true),
+('360 Review Template', 'Comprehensive 360-degree review template', '360', false);
+
+-- Insert default AI models configuration
+INSERT INTO ai_models (model_name, model_version, provider, model_type, configuration) VALUES
+('text-embedding-ada-002', 'v2', 'openai', 'embedding', '{"dimensions": 1536}'),
+('gpt-4', 'gpt-4-0613', 'openai', 'generation', '{"max_tokens": 2000, "temperature": 0.7}'),
+('text-davinci-003', 'v1', 'openai', 'classification', '{"temperature": 0.3}');
+
+-- Insert default system settings
+INSERT INTO system_settings (setting_key, setting_value, setting_type, description) VALUES
+('review_reminder_days', '7', 'general', 'Days before deadline to send review reminders'),
+('ai_confidence_threshold', '0.7', 'ai', 'Minimum confidence score for AI-generated content'),
+('max_file_size_mb', '10', 'general', 'Maximum file size for attachments in MB'),
+('feedback_retention_months', '36', 'general', 'How long to retain feedback data in months'),
+
+('okr_default_weight', '1.0', 'general', 'Default weight for new OKRs')

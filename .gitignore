@@ -1,0 +1,425 @@
+# ========================================
+# AI-Driven Performance Review Platform
+# Root .gitignore
+# ========================================
+
+# ========================================
+# Environment Variables & Secrets
+# ========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example.local
+*.env
+.env.*
+!.env.example
+
+# API Keys and Secrets
+secrets/
+config/secrets/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# ========================================
+# Node.js & NPM
+# ========================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# Snowpack dependency directory
+web_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# ========================================
+# Next.js Frontend
+# ========================================
+# Next.js build output
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+
+# Next.js cache
+frontend/.next/
+frontend/.swc/
+
+# Vercel deployment
+.vercel
+
+# Storybook build outputs
+frontend/storybook-static/
+
+# ========================================
+# NestJS Backend
+# ========================================
+# NestJS build output
+backend/dist/
+backend/build/
+
+# NestJS cache
+backend/.nest/
+
+# ========================================
+# Database
+# ========================================
+# SQLite databases
+*.sqlite
+*.sqlite3
+*.db
+
+# PostgreSQL dumps
+*.sql
+*.dump
+
+# Database migration files (if auto-generated)
+backend/src/migrations/*-*.ts
+!backend/src/migrations/README.md
+
+# Database seeds (if containing sensitive data)
+backend/src/seeds/
+
+# ========================================
+# Logs
+# ========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime logs
+backend/logs/
+frontend/logs/
+application.log
+error.log
+access.log
+combined.log
+
+# ========================================
+# Testing
+# ========================================
+# Test coverage
+coverage/
+.coverage/
+*.lcov
+.nyc_output/
+
+# Jest cache
+.jest/
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ========================================
+# Build Tools & Bundlers
+# ========================================
+# Webpack
+.webpack/
+
+# Rollup
+.rollup.cache/
+
+# Vite
+.vite/
+
+# SWC
+.swc/
+
+# ========================================
+# IDEs & Editors
+# ========================================
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+.ionide/
+
+# JetBrains IDEs
+.idea/
+*.swp
+*.swo
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ========================================
+# Operating Systems
+# ========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ========================================
+# AI & ML Specific
+# ========================================
+# Vector databases
+*.index
+*.faiss
+pinecone_cache/
+vector_store/
+
+# AI model files
+*.model
+*.pkl
+*.joblib
+models/
+checkpoints/
+
+# LangChain cache
+.langchain/
+langchain_cache/
+
+# OpenAI cache
+.openai_cache/
+
+# ========================================
+# Docker
+# ========================================
+# Docker files (keep Dockerfile but ignore runtime files)
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# ========================================
+# Deployment & Infrastructure
+# ========================================
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Kubernetes
+*.kubeconfig
+
+# Helm
+charts/*/charts/
+charts/*/requirements.lock
+
+# ========================================
+# Monitoring & Analytics
+# ========================================
+# Application monitoring
+newrelic_agent.log
+.newrelic/
+
+# Performance monitoring
+*.perf
+
+# ========================================
+# Temporary Files
+# ========================================
+# Temporary directories
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Cache directories
+.cache/
+cache/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# ========================================
+# Documentation Build
+# ========================================
+# Generated documentation
+docs/build/
+docs/_build/
+site/
+
+# ========================================
+# Package Managers
+# ========================================
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# pnpm
+.pnpm-store/
+
+# ========================================
+# Security & Compliance
+# ========================================
+# Security scan results
+security-scan-results/
+vulnerability-reports/
+
+# Compliance reports
+compliance-reports/
+
+# ========================================
+# Performance & Profiling
+# ========================================
+# Performance profiles
+*.prof
+*.cpuprofile
+*.heapprofile
+
+# Benchmark results
+benchmark-results/
+
+# ========================================
+# Custom Project Files
+# ========================================
+# Project-specific temporary files
+uploads/
+downloads/
+exports/
+imports/
+
+# Generated reports
+reports/
+analytics-data/
+
+# User-uploaded content (if not using cloud storage)
+public/uploads/
+static/uploads/
+
+# ========================================
+# End of .gitignore
+# ======================================== 
