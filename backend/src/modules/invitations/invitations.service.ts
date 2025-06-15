@@ -163,15 +163,15 @@ export class InvitationsService {
   }
 
   private async sendInvitationEmail(invitation: Invitation, organization: any): Promise<void> {
-    // Send actual email using Mailjet
-    const mailjet = require('node-mailjet').connect(
-      process.env.MAILJET_API_KEY,
-      process.env.MAILJET_API_SECRET
-    );
-    
-    const loginUrl = process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/auth/login` : 'http://localhost:3000/auth/login';
-    
     try {
+      // Send actual email using Mailjet
+      const mailjet = require('node-mailjet').connect(
+        process.env.MAILJET_API_KEY,
+        process.env.MAILJET_API_SECRET
+      );
+      
+      const loginUrl = process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/auth/login` : 'http://localhost:3000/auth/login';
+      
       await mailjet.post('send', { version: 'v3.1' }).request({
         Messages: [{
           From: { 
@@ -257,53 +257,14 @@ export class InvitationsService {
     } catch (error) {
       console.error('❌ Failed to send invitation email:', error);
       // Don't throw error - invitation is still created, just email failed
-      console.log('📧 Email failed, but invitation created. Details:');
+      console.log('📧 Email failed, but invitation created successfully. Details:');
       console.log(`To: ${invitation.email}`);
       console.log(`Name: ${invitation.firstName} ${invitation.lastName}`);
       console.log(`Organization: ${organization.name}`);
       console.log(`Role: ${invitation.role}`);
       console.log(`Job Title: ${invitation.jobTitle || 'Not specified'}`);
       console.log(`Temporary Password: ${invitation.tempPassword}`);
-      console.log(`Login URL: ${loginUrl}`);
+      console.log(`Login URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/login`);
     }
-
-    // TODO: Implement actual Mailjet email sending
-    // const mailjet = require('node-mailjet').connect(
-    //   process.env.MAILJET_API_KEY,
-    //   process.env.MAILJET_SECRET_KEY
-    // );
-    
-    // await mailjet.post('send', { version: 'v3.1' }).request({
-    //   Messages: [{
-    //     From: { Email: 'noreply@platform.com', Name: 'PerformAI Platform' },
-    //     To: [{ Email: invitation.email, Name: `${invitation.firstName} ${invitation.lastName}` }],
-    //     Subject: `Welcome to ${organization.name} - Your Account Details`,
-    //     HTMLPart: `
-    //       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-    //         <h2>Welcome to ${organization.name}!</h2>
-    //         <p>Hello ${invitation.firstName},</p>
-    //         <p>You have been invited to join <strong>${organization.name}</strong> on our performance management platform.</p>
-    //         
-    //         <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-    //           <h3>Your Account Details:</h3>
-    //           <p><strong>Email:</strong> ${invitation.email}</p>
-    //           <p><strong>Temporary Password:</strong> ${invitation.tempPassword}</p>
-    //           <p><strong>Role:</strong> ${invitation.role}</p>
-    //           <p><strong>Job Title:</strong> ${invitation.jobTitle || 'Not specified'}</p>
-    //         </div>
-    //         
-    //         <p>Please log in using the credentials above and change your password immediately.</p>
-    //         <a href="${process.env.FRONTEND_URL}/auth/login" 
-    //            style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-    //           Login to Platform
-    //         </a>
-    //         
-    //         <p style="margin-top: 20px; color: #666; font-size: 14px;">
-    //           This invitation expires in 7 days. If you have any questions, please contact your administrator.
-    //         </p>
-    //       </div>
-    //     `
-    //   }]
-    // });
   }
 } 
