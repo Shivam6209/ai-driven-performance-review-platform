@@ -1,22 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import authReducer from './slices/authSlice';
-import employeeReducer from './slices/employeeSlice';
-import departmentReducer from './slices/departmentSlice';
-import okrReducer from './slices/okrSlice';
-import feedbackReducer from './slices/feedbackSlice';
-import reviewReducer from './slices/reviewSlice';
-import uiReducer from './slices/uiSlice';
 
+// TODO: Create Redux slices when needed
 const store = configureStore({
   reducer: {
-    auth: authReducer,
-    employee: employeeReducer,
-    department: departmentReducer,
-    okr: okrReducer,
-    feedback: feedbackReducer,
-    review: reviewReducer,
-    ui: uiReducer,
+    // Placeholder reducer to avoid empty reducer error
+    placeholder: (state = {}, action) => state,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

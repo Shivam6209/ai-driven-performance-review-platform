@@ -10,16 +10,21 @@ const api = axios.create({
 });
 
 // Add auth token to requests
-api.interceptors.request.use(async (config) => {
-  const user = auth.currentUser;
-  if (user) {
-    const token = await user.getIdToken();
-    if (config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  async (config: any) => {
+    const user = auth.currentUser;
+    if (user) {
+      const token = await user.getIdToken();
+      if (config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Handle response errors
 api.interceptors.response.use(

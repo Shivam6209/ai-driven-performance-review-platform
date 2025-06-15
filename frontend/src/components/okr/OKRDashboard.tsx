@@ -20,11 +20,11 @@ import OKRUpdateForm from './OKRUpdateForm';
 import OKRProgress from './OKRProgress';
 import { OKR, OKRSummary } from '@/types/okr';
 import { okrService } from '@/services/okr.service';
-import OKREditor from './OKREditor';
+import GoalEditor from './GoalEditor';
 
-interface OKRSummary {
-  totalCount: number;
-  completedCount: number;
+interface OKRDashboardSummary {
+  totalOKRs: number;
+  completedOKRs: number;
   averageProgress: number;
   byPriority: {
     critical: number;
@@ -55,7 +55,7 @@ const OKRDashboard: React.FC = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isUpdateFormOpen, setIsUpdateFormOpen] = useState(false);
   const [okrs, setOkrs] = useState<OKR[]>([]);
-  const [summary, setSummary] = useState<OKRSummary | null>(null);
+  const [summary, setSummary] = useState<OKRDashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,8 +76,8 @@ const OKRDashboard: React.FC = () => {
         setError('Failed to load OKR data');
         setOkrs([]);
         setSummary({
-          totalCount: 0,
-          completedCount: 0,
+          totalOKRs: 0,
+          completedOKRs: 0,
           averageProgress: 0,
           byPriority: { critical: 0, high: 0, medium: 0, low: 0 },
           byStatus: { draft: 0, active: 0, completed: 0, cancelled: 0, overdue: 0 },
@@ -219,7 +219,7 @@ const OKRDashboard: React.FC = () => {
             <Typography variant="h6" color="primary" gutterBottom>
               Total OKRs
             </Typography>
-            <Typography variant="h3">{summary?.totalCount || 0}</Typography>
+            <Typography variant="h3">{summary?.totalOKRs || 0}</Typography>
           </StyledPaper>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -227,7 +227,7 @@ const OKRDashboard: React.FC = () => {
             <Typography variant="h6" color="success.main" gutterBottom>
               Completed
             </Typography>
-            <Typography variant="h3">{summary?.completedCount || 0}</Typography>
+            <Typography variant="h3">{summary?.completedOKRs || 0}</Typography>
           </StyledPaper>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -266,7 +266,8 @@ const OKRDashboard: React.FC = () => {
               okrs={okrs}
               onSelect={handleOKRSelect}
               onEdit={handleEditOKR}
-              onUpdate={handleUpdateOKR}
+              onDelete={(id) => console.log('Delete OKR:', id)}
+              onAdd={handleAddOKR}
             />
           )}
           {selectedTab === 1 && (
@@ -274,7 +275,8 @@ const OKRDashboard: React.FC = () => {
               okrs={okrs.filter(okr => okr.employee?.id === 'current-user-id')}
               onSelect={handleOKRSelect}
               onEdit={handleEditOKR}
-              onUpdate={handleUpdateOKR}
+              onDelete={(id) => console.log('Delete OKR:', id)}
+              onAdd={handleAddOKR}
             />
           )}
           {selectedTab === 2 && (
@@ -282,7 +284,8 @@ const OKRDashboard: React.FC = () => {
               okrs={okrs}
               onSelect={handleOKRSelect}
               onEdit={handleEditOKR}
-              onUpdate={handleUpdateOKR}
+              onDelete={(id) => console.log('Delete OKR:', id)}
+              onAdd={handleAddOKR}
             />
           )}
           {selectedTab === 3 && (
@@ -332,9 +335,9 @@ const OKRDashboard: React.FC = () => {
 
       {/* Dialogs */}
       {isEditorOpen && (
-        <OKREditor
-          okr={selectedOKR}
-          open={isEditorOpen}
+        <GoalEditor
+          initialData={selectedOKR || undefined}
+          isOpen={isEditorOpen}
           onSave={handleSaveOKR}
           onClose={handleCloseEditor}
         />
@@ -343,8 +346,8 @@ const OKRDashboard: React.FC = () => {
       {isUpdateFormOpen && selectedOKR && (
         <OKRUpdateForm
           okr={selectedOKR}
-          open={isUpdateFormOpen}
-          onSave={handleSaveUpdate}
+          isOpen={isUpdateFormOpen}
+          onSubmit={handleSaveUpdate}
           onClose={handleCloseUpdateForm}
         />
       )}

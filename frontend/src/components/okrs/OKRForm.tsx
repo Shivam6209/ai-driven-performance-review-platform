@@ -20,6 +20,12 @@ interface OKRFormProps {
   onCancel: () => void;
 }
 
+interface KeyResult {
+  id: number;
+  title: string;
+  description: string;
+}
+
 const OKRForm: React.FC<OKRFormProps> = ({ okr, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     title: okr?.title || '',
@@ -27,7 +33,7 @@ const OKRForm: React.FC<OKRFormProps> = ({ okr, onSubmit, onCancel }) => {
     level: okr?.level || 'individual',
     status: okr?.status || 'not_started',
     tags: okr?.tags || [],
-    keyResults: [],
+    keyResults: [] as KeyResult[],
   });
 
   const [newTag, setNewTag] = useState('');

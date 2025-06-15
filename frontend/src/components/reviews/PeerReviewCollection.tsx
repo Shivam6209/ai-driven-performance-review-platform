@@ -36,15 +36,10 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { reviewsService } from '../../services/reviewsService';
 import { employeeService } from '../../services/employeeService';
 import { aiService } from '../../services/aiService';
+import { Employee } from '../../types/employee';
 
-interface PeerReviewCollectionProps {
-  employeeId: string;
-  reviewCycleId: string;
-  managerId?: string;
-  isManager?: boolean;
-}
-
-interface PeerReview {
+// Import PeerReview type from service
+type PeerReview = {
   id: string;
   reviewerId: string;
   reviewerName: string;
@@ -58,14 +53,13 @@ interface PeerReview {
     collaboration: string;
     overall: string;
   };
-}
+};
 
-interface Employee {
-  id: string;
-  name: string;
-  role: string;
-  avatar?: string;
-  department: string;
+interface PeerReviewCollectionProps {
+  employeeId: string;
+  reviewCycleId: string;
+  managerId?: string;
+  isManager?: boolean;
 }
 
 export const PeerReviewCollection: React.FC<PeerReviewCollectionProps> = ({
@@ -129,7 +123,7 @@ export const PeerReviewCollection: React.FC<PeerReviewCollectionProps> = ({
   // Submit peer review mutation
   const submitReviewMutation = useMutation(
     (reviewData: { reviewId: string; content: typeof reviewFormData }) => 
-      reviewsService.submitPeerReview(reviewData.reviewId, reviewData.content),
+      reviewsService.submitPeerReview(employeeId, reviewCycleId, reviewData.content),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['peerReviews', employeeId, reviewCycleId]);
@@ -148,7 +142,7 @@ export const PeerReviewCollection: React.FC<PeerReviewCollectionProps> = ({
   // Approve/reject review mutation
   const updateReviewStatusMutation = useMutation(
     (data: { reviewId: string; status: 'approved' | 'rejected' }) => 
-      reviewsService.updatePeerReviewStatus(data.reviewId, data.status),
+      reviewsService.updateReviewStatus(data.reviewId, data.status === 'approved' ? 'completed' : 'rejected'),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['peerReviews', employeeId, reviewCycleId]);
@@ -162,17 +156,17 @@ export const PeerReviewCollection: React.FC<PeerReviewCollectionProps> = ({
     
     setIsGeneratingAI(true);
     try {
-      const suggestions = await aiService.generatePeerReviewSuggestions(
-        selectedReview.reviewerId,
-        employeeId,
-        reviewCycleId
-      );
+      const response = await aiService.generateReview({
+        employeeId: employeeId,
+        reviewType: 'peer',
+        context: `Peer review for employee ${employeeId} by reviewer ${selectedReview.reviewerId}`
+      });
       
       setReviewFormData({
-        strengths: suggestions.strengths || '',
-        improvements: suggestions.improvements || '',
-        collaboration: suggestions.collaboration || '',
-        overall: suggestions.overall || '',
+        strengths: response.content.strengths.join('\n') || '',
+        improvements: response.content.areasForImprovement.join('\n') || '',
+        collaboration: response.content.specificExamples.join('\n') || '',
+        overall: response.content.summary || '',
       });
     } catch (error) {
       console.error('Error generating AI suggestions:', error);
@@ -512,8 +506,8 @@ export const PeerReviewCollection: React.FC<PeerReviewCollectionProps> = ({
                     }
                   >
                     <ListItemText 
-                      primary={peer.name} 
-                      secondary={`${peer.role} • ${peer.department}`} 
+                      primary={peer.name || 'Unknown'} 
+                      secondary={`${peer.role || 'Unknown Role'} • ${peer.department || 'Unknown Department'}`} 
                     />
                   </ListItem>
                 ))}

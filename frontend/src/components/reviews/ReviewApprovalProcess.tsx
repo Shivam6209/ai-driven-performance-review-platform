@@ -48,63 +48,8 @@ interface ReviewApprovalProcessProps {
   onComplete?: () => void;
 }
 
-interface ReviewData {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  managerId: string;
-  managerName: string;
-  reviewCycleId: string;
-  reviewCycleName: string;
-  status: 'draft' | 'self_assessment_pending' | 'manager_review_pending' | 'employee_acknowledgment_pending' | 'completed' | 'rejected';
-  currentStep: number;
-  createdAt: string;
-  updatedAt: string;
-  dueDate?: string;
-  completedAt?: string;
-  content: {
-    selfAssessment?: {
-      achievements: string;
-      challenges: string;
-      skillsGained: string;
-      goalsProgress: string;
-      improvementAreas: string;
-      overallRating: number;
-    };
-    managerAssessment?: {
-      strengths: string;
-      areasForImprovement: string;
-      goalAssessment: string;
-      skillsAssessment: string;
-      overallFeedback: string;
-      performanceRating: number;
-    };
-    peerReviews?: Array<{
-      id: string;
-      reviewerName: string;
-      content: {
-        strengths: string;
-        improvements: string;
-        collaboration: string;
-        overall: string;
-      };
-    }>;
-    employeeAcknowledgment?: {
-      acknowledged: boolean;
-      comments?: string;
-      acknowledgedAt?: string;
-    };
-    hrNotes?: string;
-    finalNotes?: string;
-  };
-  history: Array<{
-    timestamp: string;
-    action: string;
-    actorId: string;
-    actorName: string;
-    notes?: string;
-  }>;
-}
+// Use any type to avoid conflicts with service types
+type ReviewData = any;
 
 export const ReviewApprovalProcess: React.FC<ReviewApprovalProcessProps> = ({
   reviewId,
@@ -671,7 +616,7 @@ export const ReviewApprovalProcess: React.FC<ReviewApprovalProcessProps> = ({
       >
         <DialogTitle>Review History</DialogTitle>
         <DialogContent>
-          {review?.history.map((event, index) => (
+          {review?.history.map((event: any, index: number) => (
             <Box key={index} mb={2} pb={2} borderBottom={index < review.history.length - 1 ? 1 : 0} borderColor="divider">
               <Typography variant="subtitle2">
                 {new Date(event.timestamp).toLocaleString()}

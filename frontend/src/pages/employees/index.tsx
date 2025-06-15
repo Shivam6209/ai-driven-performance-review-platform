@@ -59,14 +59,19 @@ export default function EmployeesPage(): JSX.Element {
   const loadEmployees = async () => {
     try {
       setLoading(true);
-      const response = await employeeService.getEmployees({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: searchTerm || undefined,
-      });
+      const employees = await employeeService.getAllEmployees();
       
-      setEmployees(response.data.employees);
-      setTotalCount(response.data.total);
+      // TODO: Implement server-side pagination and filtering
+      let filteredEmployees = employees;
+      if (searchTerm) {
+        filteredEmployees = employees.filter(emp => 
+          `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          emp.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      
+      setEmployees(filteredEmployees as any);
+      setTotalCount(filteredEmployees.length);
       setError('');
     } catch (err: any) {
       setError(err.message || 'Failed to load employees');

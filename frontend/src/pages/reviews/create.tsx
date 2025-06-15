@@ -25,39 +25,39 @@ import Layout from '@/components/layout/Layout';
 const reviewSections = [
   {
     id: 'achievements',
-    title: 'Key Achievements',
+    sectionName: 'Key Achievements',
+    sectionType: 'text' as const,
     description: 'Describe the major accomplishments during the review period.',
-    placeholder: 'List and describe key achievements, projects completed, and goals met...',
-    required: true,
-    aiAssisted: true,
-    minLength: 100,
+    isRequired: true,
+    aiGenerationEnabled: true,
+    maxLength: 1000,
   },
   {
     id: 'strengths',
-    title: 'Strengths',
+    sectionName: 'Strengths',
+    sectionType: 'text' as const,
     description: 'Highlight areas where the employee has demonstrated exceptional skills.',
-    placeholder: 'Describe strengths, skills, and positive behaviors...',
-    required: true,
-    aiAssisted: true,
-    minLength: 50,
+    isRequired: true,
+    aiGenerationEnabled: true,
+    maxLength: 500,
   },
   {
     id: 'improvements',
-    title: 'Areas for Improvement',
+    sectionName: 'Areas for Improvement',
+    sectionType: 'text' as const,
     description: 'Identify opportunities for growth and development.',
-    placeholder: 'Suggest areas for improvement and development opportunities...',
-    required: true,
-    aiAssisted: true,
-    minLength: 50,
+    isRequired: true,
+    aiGenerationEnabled: true,
+    maxLength: 500,
   },
   {
     id: 'goals',
-    title: 'Goals for Next Period',
+    sectionName: 'Goals for Next Period',
+    sectionType: 'text' as const,
     description: 'Set clear, measurable goals for the next review period.',
-    placeholder: 'Define specific, measurable goals for the upcoming period...',
-    required: true,
-    aiAssisted: true,
-    minLength: 100,
+    isRequired: true,
+    aiGenerationEnabled: true,
+    maxLength: 1000,
   },
 ];
 
@@ -169,7 +169,7 @@ const CreateReviewPage: React.FC = () => {
       case 1:
         return (
           <ReviewTemplate
-            title={`${
+            templateName={`${
               reviewType === 'self'
                 ? 'Self Assessment'
                 : reviewType === 'peer'
@@ -178,9 +178,6 @@ const CreateReviewPage: React.FC = () => {
             }`}
             description="Complete the review form below. You can use AI assistance to generate content based on available data."
             sections={reviewSections}
-            employeeId={currentUser?.id || ''}
-            revieweeId={reviewType === 'self' ? currentUser?.id : selectedEmployee}
-            reviewType={reviewType}
             onSave={handleReviewSave}
             onCancel={handleBack}
             initialData={reviewData}
@@ -213,7 +210,7 @@ const CreateReviewPage: React.FC = () => {
 
               {reviewSections.map((section) => (
                 <Box key={section.id} sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1">{section.title}:</Typography>
+                  <Typography variant="subtitle1">{section.sectionName}:</Typography>
                   <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
                     <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                       {reviewData[section.id] || 'Not provided'}

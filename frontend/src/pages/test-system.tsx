@@ -135,13 +135,15 @@ export default function SystemTestPage(): JSX.Element {
     updateTestResult('Create Test Employee', 'loading');
     try {
       const testEmployee = {
-        name: 'Test Employee',
+        firstName: 'Test',
+        lastName: 'Employee',
         email: `test.employee.${Date.now()}@company.com`,
-        role: 'employee',
-        department: 'Engineering',
-        position: 'Software Developer',
-        startDate: new Date().toISOString().split('T')[0],
-        status: 'active' as const,
+        jobTitle: 'Software Developer',
+        departmentId: 'dept-1',
+        isActive: true,
+        hireDate: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       
       const createdEmployee = await employeeService.createEmployee(testEmployee);
@@ -157,6 +159,9 @@ export default function SystemTestPage(): JSX.Element {
       const testDepartment = {
         name: `Test Department ${Date.now()}`,
         description: 'A test department for system testing',
+        managerId: 'manager-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       
       const createdDepartment = await employeeService.createDepartment(testDepartment);
@@ -279,7 +284,7 @@ export default function SystemTestPage(): JSX.Element {
                         <ListItemText primary="ID" secondary={currentUser.id} />
                       </ListItem>
                       <ListItem>
-                        <ListItemText primary="Name" secondary={currentUser.name} />
+                        <ListItemText primary="Name" secondary={`${currentUser.firstName} ${currentUser.lastName}`} />
                       </ListItem>
                       <ListItem>
                         <ListItemText primary="Email" secondary={currentUser.email} />

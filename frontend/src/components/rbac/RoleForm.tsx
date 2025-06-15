@@ -15,6 +15,7 @@ import {
   MenuItem,
   CircularProgress,
   Grid,
+  SelectChangeEvent,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -79,7 +80,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ roleId }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleParentRoleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+  const handleParentRoleChange = (event: SelectChangeEvent) => {
     const value = event.target.value as string;
     setFormData((prev) => ({ ...prev, parentRoleId: value === 'none' ? undefined : value }));
   };

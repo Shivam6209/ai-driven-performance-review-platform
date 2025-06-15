@@ -47,7 +47,7 @@ export const invitationsService = {
    * Resend an invitation
    */
   resendInvitation: async (invitationId: string): Promise<Invitation> => {
-    const response = await apiService.put<Invitation>(`/invitations/${invitationId}/resend`);
+    const response = await apiService.put<Invitation>(`/invitations/${invitationId}/resend`, {});
     return response.data;
   },
 
@@ -71,7 +71,7 @@ export const invitationsService = {
    */
   validateInvitationToken: async (token: string): Promise<{ valid: boolean; invitation?: Invitation }> => {
     try {
-      const invitation = await this.getInvitationByToken(token);
+      const invitation = await invitationsService.getInvitationByToken(token);
       return { valid: true, invitation };
     } catch (error) {
       return { valid: false };
