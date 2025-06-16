@@ -180,8 +180,8 @@ export default function ReviewsPage(): JSX.Element {
           setTemplates(templatesData);
           break;
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load data');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -226,17 +226,17 @@ export default function ReviewsPage(): JSX.Element {
     try {
       setAiGenerationDialog(prev => ({ ...prev, loading: true }));
       
-      const result = await reviewsService.generateAIReview({
-        employeeId: aiGenerationDialog.employeeId,
-        reviewCycleId: aiGenerationDialog.reviewCycleId,
-        reviewType: aiGenerationDialog.reviewType,
-      });
+      const result = await reviewsService.generateAIReview(
+        aiGenerationDialog.employeeId,
+        aiGenerationDialog.reviewCycleId,
+        aiGenerationDialog.reviewType
+      );
 
       setSuccess('AI review generated successfully!');
       setAiGenerationDialog({ open: false, employeeId: '', reviewCycleId: '', reviewType: 'manager', loading: false });
       loadData(); // Refresh the data
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate AI review');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to generate AI review');
       setAiGenerationDialog(prev => ({ ...prev, loading: false }));
     }
   };
@@ -244,21 +244,21 @@ export default function ReviewsPage(): JSX.Element {
   // Handle review actions
   const handleSubmitReview = async (reviewId: string) => {
     try {
-      await reviewsService.submitReview(reviewId);
+      await reviewsService.updateReviewStatus(reviewId, 'manager_review_pending');
       setSuccess('Review submitted successfully!');
       loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit review');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to submit review');
     }
   };
 
   const handleApproveReview = async (reviewId: string) => {
     try {
-      await reviewsService.approveReview(reviewId);
+      await reviewsService.updateReviewStatus(reviewId, 'completed');
       setSuccess('Review approved successfully!');
       loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to approve review');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to approve review');
     }
   };
 
@@ -324,8 +324,8 @@ export default function ReviewsPage(): JSX.Element {
       
       setCreateDialogOpen(false);
       loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save item');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save item');
     } finally {
       setLoading(false);
     }
@@ -350,8 +350,8 @@ export default function ReviewsPage(): JSX.Element {
       setSuccess('Item deleted successfully!');
       setDeleteDialogOpen(false);
       loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete item');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete item');
     } finally {
       setLoading(false);
     }
@@ -726,7 +726,7 @@ export default function ReviewsPage(): JSX.Element {
                   {reviews.filter(r => r.status === 'approved').length}
                 </Typography>
               </Box>
-              <CheckCircle color="success" sx={{ fontSize: 40 }} />
+              <ApproveIcon color="success" sx={{ fontSize: 40 }} />
             </Box>
           </CardContent>
         </Card>
@@ -752,7 +752,7 @@ export default function ReviewsPage(): JSX.Element {
   );
 
   return (
-    <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.HR, UserRole.MANAGER, UserRole.EMPLOYEE]}>
+    <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.HR, UserRole.MANAGER, UserRole.EMPLOYEE]}>
       <Layout>
         <Container maxWidth="xl">
           <Box sx={{ py: 4 }}>

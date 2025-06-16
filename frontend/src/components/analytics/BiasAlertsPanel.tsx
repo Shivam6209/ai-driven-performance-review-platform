@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -49,11 +49,7 @@ const BiasAlertsPanel: React.FC<BiasAlertsPanelProps> = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(initialMaxAlerts);
 
-  useEffect(() => {
-    fetchAlerts();
-  }, [employeeId, onlyUnacknowledged]);
-
-  const fetchAlerts = async () => {
+  const fetchAlerts = useCallback(async () => {
     if (!employeeId) return;
     
     setLoading(true);
@@ -62,19 +58,23 @@ const BiasAlertsPanel: React.FC<BiasAlertsPanelProps> = ({
     try {
       const fetchedAlerts = await sentimentService.getSentimentAlerts(employeeId, onlyUnacknowledged);
       setAlerts(fetchedAlerts);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch alerts');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch alerts');
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId, onlyUnacknowledged]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
 
   const handleAcknowledge = async (alertId: string) => {
     try {
       await sentimentService.acknowledgeAlert(alertId);
       setAlerts(alerts.filter(alert => alert.id !== alertId));
-    } catch (err: any) {
-      setError(err.message || 'Failed to acknowledge alert');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to acknowledge alert');
     }
   };
 

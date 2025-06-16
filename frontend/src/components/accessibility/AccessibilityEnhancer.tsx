@@ -527,7 +527,7 @@ const AccessibilityEnhancer: React.FC<{ children: React.ReactNode }> = ({ childr
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [settings.keyboardNavigation]); // Only depend on keyboardNavigation, not entire settings object
+  }, [settings.keyboardNavigation, settings.fontSize, settings.highContrast]); // Include all settings used in the effect
 
   const accessibilityTheme = getAccessibilityTheme();
 

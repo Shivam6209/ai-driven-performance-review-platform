@@ -298,6 +298,13 @@ export const reviewsService = {
     return response.data;
   },
 
+  /**
+   * Delete a review cycle
+   */
+  deleteReviewCycle: async (cycleId: string) => {
+    await apiClient.delete(`/reviews/cycles/${cycleId}`);
+  },
+
   // ========================================
   // REVIEW TEMPLATES CRUD
   // ========================================
@@ -336,6 +343,13 @@ export const reviewsService = {
   updateReviewTemplate: async (templateId: string, templateData: Partial<ReviewTemplate>) => {
     const response = await apiClient.put<ReviewTemplate>(`/reviews/templates/${templateId}`, templateData);
     return response.data;
+  },
+
+  /**
+   * Delete a review template
+   */
+  deleteReviewTemplate: async (templateId: string) => {
+    await apiClient.delete(`/reviews/templates/${templateId}`);
   },
 
   // ========================================
@@ -564,6 +578,18 @@ export const reviewsService = {
     const response = await apiClient.post(`/reviews/${reviewId}/comments`, {
       comment,
       isPrivate,
+    });
+    return response.data;
+  },
+
+  /**
+   * Generate AI review
+   */
+  generateAIReview: async (employeeId: string, reviewCycleId: string, reviewType: string) => {
+    const response = await apiClient.post(`/reviews/ai-generate`, {
+      employeeId,
+      reviewCycleId,
+      reviewType,
     });
     return response.data;
   },
