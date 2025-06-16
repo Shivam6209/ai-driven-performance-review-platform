@@ -133,6 +133,27 @@ docker-compose down
    npm run seed
    ```
 
+### Email Service Setup (Mailjet)
+
+1. **Create Mailjet Account**
+   - Sign up at [Mailjet.com](https://www.mailjet.com/)
+   - Get your API Key and Secret Key from the dashboard
+
+2. **Configure Environment Variables**
+   ```bash
+   # Add to your .env file
+   MAILJET_API_KEY=your-mailjet-api-key
+   MAILJET_API_SECRET=your-mailjet-secret-key
+   FROM_EMAIL=noreply@yourdomain.com
+   ```
+
+3. **Test Email Integration**
+   ```bash
+   node test-mailjet-integration.js
+   ```
+
+The invitation system will now send professional HTML emails with login credentials to new users.
+
 ## 📚 API Documentation
 
 ### Authentication Endpoints

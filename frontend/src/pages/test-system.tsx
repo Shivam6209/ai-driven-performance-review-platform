@@ -28,7 +28,7 @@ import {
   Security as SecurityIcon,
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
-import DashboardLayout from '@/layouts/DashboardLayout';
+import Layout from '@/components/layout/Layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { employeeService } from '@/services/employeeService';
 import { feedbackService } from '@/services/feedback.service';
@@ -217,7 +217,7 @@ export default function SystemTestPage(): JSX.Element {
 
   return (
     <ProtectedRoute>
-      <DashboardLayout>
+      <Layout>
         <Container maxWidth="xl">
           <Box sx={{ mb: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom>
@@ -351,7 +351,7 @@ export default function SystemTestPage(): JSX.Element {
             </Grid>
           </Paper>
         </Container>
-      </DashboardLayout>
+      </Layout>
     </ProtectedRoute>
   );
 } 

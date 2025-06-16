@@ -43,10 +43,12 @@ import {
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import Layout from '../../components/layout/Layout';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import { RbacService } from '../../services/rbac.service';
 import { employeeService } from '../../services/employeeService';
 import { Role, Permission, RoleAssignment, CreateRoleDto, AssignRoleDto } from '../../types/rbac';
 import { Employee } from '../../types/employee';
+import { UserRole } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function RBACManagementPage() {
@@ -213,7 +215,8 @@ export default function RBACManagementPage() {
   }
 
   return (
-    <Layout>
+    <ProtectedRoute requiredRoles={['admin', 'hr'] as UserRole[]}>
+      <Layout>
       <Container maxWidth="lg">
         <Box sx={{ py: 4 }}>
           {/* Modern Header matching OKRs page */}
@@ -657,5 +660,6 @@ export default function RBACManagementPage() {
         </Snackbar>
       </Container>
     </Layout>
+    </ProtectedRoute>
   );
 } 

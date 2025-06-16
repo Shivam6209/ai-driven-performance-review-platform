@@ -28,21 +28,51 @@ import {
   Fab,
   CircularProgress,
   LinearProgress,
+  Skeleton,
+  Tabs,
+  Tab,
+  Tooltip,
+  Divider,
 } from '@mui/material';
 import {
-  Add,
-  MoreVert,
-  TrendingUp,
-  Flag,
-  CalendarToday,
-  Edit,
-  Delete,
-  FilterList,
+  Add as AddIcon,
+  MoreVert as MoreVertIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  TrendingUp as TrendingUpIcon,
+  Flag as FlagIcon,
+  Timeline as TimelineIcon,
+  Business as BusinessIcon,
+  Group as GroupIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import Layout from '@/components/layout/Layout';
 import OKRProgress from '@/components/okr/OKRProgress';
 import { okrService } from '@/services/okr.service';
 import { OKR, OKRStatus, OKRLevel, OKRPriority } from '@/types/okr';
+import { departmentsService } from '@/services/departments.service';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`okr-tabpanel-${index}`}
+      aria-labelledby={`okr-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 /**
  * OKRs Page Component
@@ -68,32 +98,38 @@ export default function OKRsPage(): JSX.Element {
     parentObjectiveId: '',
     status: 'draft' as OKRStatus,
     progress: 0,
+    departmentId: '',
   });
   const [parentOKRs, setParentOKRs] = useState<OKR[]>([]);
   const [editingOKR, setEditingOKR] = useState<OKR | null>(null);
+  const [departments, setDepartments] = useState<any[]>([]);
 
-  // Load OKRs from backend API
+  // Load OKRs and departments from backend API
   useEffect(() => {
-    const loadOKRs = async () => {
+    const loadData = async () => {
       if (!currentUser?.id) return;
 
       try {
         setLoading(true);
         setError(null);
         
-        // Get OKRs for current user
-        const userOKRs = await okrService.getOKRs();
+        // Load OKRs and departments in parallel
+        const [userOKRs, departmentsList] = await Promise.all([
+          okrService.getOKRs(),
+          departmentsService.getAll()
+        ]);
         
         setOkrs(userOKRs);
+        setDepartments(departmentsList);
       } catch (error) {
-        console.error('Failed to load OKRs:', error);
-        setError('Failed to load OKRs. Please try again.');
+        console.error('Failed to load data:', error);
+        setError('Failed to load data. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
-    loadOKRs();
+    loadData();
   }, [currentUser?.id]);
 
   // Load parent OKRs when dialog opens
@@ -139,6 +175,7 @@ export default function OKRsPage(): JSX.Element {
         parentObjectiveId: okrToEdit.parent_okr?.id || '',
         status: okrToEdit.status,
         progress: okrToEdit.progress,
+        departmentId: '', // Will be populated from backend
       });
       setOpenDialog(true);
     }
@@ -156,6 +193,7 @@ export default function OKRsPage(): JSX.Element {
       parentObjectiveId: '',
       status: 'draft' as OKRStatus,
       progress: 0,
+      departmentId: '',
     });
     setEditingOKR(null);
     setOpenDialog(true);
@@ -174,6 +212,7 @@ export default function OKRsPage(): JSX.Element {
       parentObjectiveId: '',
       status: 'draft' as OKRStatus,
       progress: 0,
+      departmentId: '',
     });
   };
 
@@ -204,7 +243,8 @@ export default function OKRsPage(): JSX.Element {
         status: newOKR.status,
         progress: newOKR.progress,
         updates: [],
-        tags: []
+        tags: [],
+        departmentId: newOKR.level === 'department' ? newOKR.departmentId : undefined,
       } as any;
 
       let resultOKR: OKR;
@@ -231,6 +271,7 @@ export default function OKRsPage(): JSX.Element {
         parentObjectiveId: '',
         status: 'draft' as OKRStatus,
         progress: 0,
+        departmentId: '',
       });
       setEditingOKR(null);
       setOpenDialog(false);
@@ -354,7 +395,7 @@ export default function OKRsPage(): JSX.Element {
               </Box>
               <Button
                 variant="contained"
-                startIcon={<Add />}
+                startIcon={<AddIcon />}
                 onClick={handleOpenCreateDialog}
                 sx={{
                   borderRadius: 3,
@@ -527,7 +568,7 @@ export default function OKRsPage(): JSX.Element {
                   mx: 'auto',
                   mb: 3,
                 }}>
-                  <Flag sx={{ fontSize: 40, color: 'primary.main' }} />
+                  <FlagIcon sx={{ fontSize: 40, color: 'primary.main' }} />
                 </Box>
                 <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>
                   No OKRs found
@@ -541,7 +582,7 @@ export default function OKRsPage(): JSX.Element {
                 {filter === 'all' && (
                   <Button
                     variant="contained"
-                    startIcon={<Add />}
+                    startIcon={<AddIcon />}
                     onClick={handleOpenCreateDialog}
                     size="large"
                     sx={{
@@ -634,7 +675,7 @@ export default function OKRsPage(): JSX.Element {
                             }
                           }}
                         >
-                          <MoreVert />
+                          <MoreVertIcon />
                         </IconButton>
                       </Box>
 
@@ -723,7 +764,7 @@ export default function OKRsPage(): JSX.Element {
                       }}>
                         {okr.due_date && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            <TimelineIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
                               Due: {new Date(okr.due_date).toLocaleDateString()}
                             </Typography>
@@ -790,7 +831,7 @@ export default function OKRsPage(): JSX.Element {
                 }
               }
             }}>
-              <Edit sx={{ mr: 1.5, fontSize: 18, transition: 'transform 0.2s ease' }} />
+              <EditIcon sx={{ mr: 1.5, fontSize: 18, transition: 'transform 0.2s ease' }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Edit
               </Typography>
@@ -811,7 +852,7 @@ export default function OKRsPage(): JSX.Element {
                 }
               }}
             >
-              <Delete sx={{ mr: 1.5, fontSize: 18, transition: 'transform 0.2s ease' }} />
+              <DeleteIcon sx={{ mr: 1.5, fontSize: 18, transition: 'transform 0.2s ease' }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Delete
               </Typography>
@@ -834,6 +875,7 @@ export default function OKRsPage(): JSX.Element {
                 parentObjectiveId: '',
                 status: 'draft' as OKRStatus,
                 progress: 0,
+                departmentId: '',
               });
             }}
             maxWidth="md" 
@@ -903,7 +945,7 @@ export default function OKRsPage(): JSX.Element {
                   justifyContent: 'center',
                   boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
                 }}>
-                  <Flag sx={{ fontSize: 28, color: 'white' }} />
+                  <FlagIcon sx={{ fontSize: 28, color: 'white' }} />
                 </Box>
                 <Box>
                   <Typography variant="h4" sx={{ 
@@ -1006,27 +1048,36 @@ export default function OKRsPage(): JSX.Element {
                       <SelectMenuItem value="individual">
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'info.main' }} />
-                          Individual
+                          Personal
+                          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                            (Only you can see this)
+                          </Typography>
                         </Box>
                       </SelectMenuItem>
-                      <SelectMenuItem value="team">
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
-                          Team
-                        </Box>
-                      </SelectMenuItem>
-                      <SelectMenuItem value="department">
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
-                          Department
-                        </Box>
-                      </SelectMenuItem>
-                      <SelectMenuItem value="company">
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
-                          Company
-                        </Box>
-                      </SelectMenuItem>
+                      {/* Department level - Only for HR and Managers (not Admin) */}
+                      {(currentUser?.role === 'hr' || currentUser?.role === 'manager') && (
+                        <SelectMenuItem value="department">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                            Department
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                              (Visible to department members)
+                            </Typography>
+                          </Box>
+                        </SelectMenuItem>
+                      )}
+                      {/* Organization level - Only for Admin and HR */}
+                      {(currentUser?.role === 'admin' || currentUser?.role === 'hr') && (
+                        <SelectMenuItem value="company">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
+                            Organization
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                              (Visible to everyone)
+                            </Typography>
+                          </Box>
+                        </SelectMenuItem>
+                      )}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -1158,6 +1209,30 @@ export default function OKRsPage(): JSX.Element {
                     </Typography>
                   </Box>
                 </Grid>
+
+                {/* Department Selection - Only show for department level OKRs */}
+                {newOKR.level === 'department' && (
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth required>
+                      <InputLabel>Department</InputLabel>
+                      <Select
+                        value={newOKR.departmentId}
+                        label="Department"
+                        onChange={(e) => setNewOKR({ ...newOKR, departmentId: e.target.value })}
+                        sx={{ borderRadius: 2 }}
+                      >
+                        {departments.map((dept) => (
+                          <SelectMenuItem key={dept.id} value={dept.id}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <BusinessIcon fontSize="small" color="action" />
+                              {dept.name}
+                            </Box>
+                          </SelectMenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                )}
               </Grid>
             </DialogContent>
             
@@ -1244,7 +1319,7 @@ export default function OKRsPage(): JSX.Element {
                   </Box>
                 ) : (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    {editingOKR ? <Edit sx={{ fontSize: 20 }} /> : <Add sx={{ fontSize: 20 }} />}
+                    {editingOKR ? <EditIcon sx={{ fontSize: 20 }} /> : <AddIcon sx={{ fontSize: 20 }} />}
                     <Typography variant="inherit" sx={{ fontWeight: 'inherit' }}>
                       {editingOKR ? 'Update OKR' : 'Create OKR'}
                     </Typography>

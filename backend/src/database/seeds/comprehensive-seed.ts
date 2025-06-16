@@ -143,25 +143,57 @@ export async function seedComprehensiveData(dataSource: DataSource) {
   });
   await roleRepository.save(employeeRole);
 
-  // 1. Create Departments
-  console.log('🏢 Creating departments...');
+  // Create Departments first
+  console.log('🏢 Creating Departments...');
+  
+  const hrDept = departmentRepository.create({
+    name: 'Human Resources',
+    description: 'HR Department',
+  });
+  await departmentRepository.save(hrDept);
+
   const engineeringDept = departmentRepository.create({
     name: 'Engineering',
-    description: 'Software development and technical operations',
+    description: 'Engineering Department',
   });
   await departmentRepository.save(engineeringDept);
 
   const marketingDept = departmentRepository.create({
     name: 'Marketing',
-    description: 'Brand management and customer acquisition',
+    description: 'Marketing Department',
   });
   await departmentRepository.save(marketingDept);
 
-  const hrDept = departmentRepository.create({
-    name: 'Human Resources',
-    description: 'People operations and talent management',
+  // 1. Create System Admin
+  console.log('🔧 Creating System Admin...');
+  const systemAdminPassword = await bcrypt.hash('password123', 10);
+  const systemAdminUser = userRepository.create({
+    email: 'admin@company.com',
+    password: systemAdminPassword,
+    role: UserRole.ADMIN,
+    isActive: true,
+    isEmailVerified: true,
   });
-  await departmentRepository.save(hrDept);
+  await userRepository.save(systemAdminUser);
+
+  const systemAdmin = employeeRepository.create({
+    employeeCode: 'ADM001',
+    firstName: 'System',
+    lastName: 'Administrator',
+    email: 'admin@company.com',
+    displayName: 'System Administrator',
+    jobTitle: 'System Administrator',
+    role: UserRole.ADMIN as any,
+    hireDate: new Date('2019-01-01'),
+    employmentStatus: 'active',
+    timezone: 'America/New_York',
+    isActive: true,
+    user: systemAdminUser,
+  });
+  await employeeRepository.save(systemAdmin);
+
+  systemAdminUser.employeeId = systemAdmin.id;
+  await userRepository.save(systemAdminUser);
 
   // 2. Create HR Admin
   console.log('👑 Creating HR Admin...');
@@ -169,7 +201,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
   const hrAdminUser = userRepository.create({
     email: 'hr.admin@company.com',
     password: hrAdminPassword,
-    role: UserRole.HR,
+    role: UserRole.HR, // Back to HR role
     isActive: true,
     isEmailVerified: true,
   });
@@ -182,6 +214,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
     email: 'hr.admin@company.com',
     displayName: 'Sarah Johnson',
     jobTitle: 'HR Director',
+    role: UserRole.HR as any, // Back to HR role
     departmentId: hrDept.id,
     hireDate: new Date('2020-01-15'),
     employmentStatus: 'active',
@@ -214,6 +247,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
     email: 'john.smith@company.com',
     displayName: 'John Smith',
     jobTitle: 'Engineering Manager',
+    role: UserRole.MANAGER as any,
     departmentId: engineeringDept.id,
     hireDate: new Date('2019-03-10'),
     employmentStatus: 'active',
@@ -245,6 +279,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
     email: 'emily.davis@company.com',
     displayName: 'Emily Davis',
     jobTitle: 'Marketing Manager',
+    role: UserRole.MANAGER as any,
     departmentId: marketingDept.id,
     hireDate: new Date('2019-06-20'),
     employmentStatus: 'active',
@@ -258,9 +293,22 @@ export async function seedComprehensiveData(dataSource: DataSource) {
   await userRepository.save(mktManagerUser);
 
   // Update department heads
-  engineeringDept.headId = engManager.id;
-  marketingDept.headId = mktManager.id;
-  hrDept.headId = hrAdmin.id;
+  engineeringDept.manager = engManager;
+  marketingDept.manager = mktManager;
+  hrDept.manager = hrAdmin;
+  await departmentRepository.save([engineeringDept, marketingDept, hrDept]);
+
+  // 4.5. Assign HR Personnel to Departments (Many-to-Many)
+  console.log('🔗 Assigning HR personnel to departments...');
+  
+  // HR Admin should be able to manage all departments
+  hrAdmin.hrDepartments = [engineeringDept, marketingDept, hrDept];
+  await employeeRepository.save(hrAdmin);
+  
+  // Update departments with HR personnel
+  engineeringDept.hrPersonnel = [hrAdmin];
+  marketingDept.hrPersonnel = [hrAdmin];
+  hrDept.hrPersonnel = [hrAdmin];
   await departmentRepository.save([engineeringDept, marketingDept, hrDept]);
 
   // 5. Create Engineering Employees
@@ -284,6 +332,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
     email: 'alex.wilson@company.com',
     displayName: 'Alex Wilson',
     jobTitle: 'Senior Software Engineer',
+    role: UserRole.EMPLOYEE as any,
     departmentId: engineeringDept.id,
     managerId: engManager.id,
     hireDate: new Date('2021-02-15'),
@@ -315,6 +364,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
     email: 'maria.garcia@company.com',
     displayName: 'Maria Garcia',
     jobTitle: 'Frontend Developer',
+    role: UserRole.EMPLOYEE as any,
     departmentId: engineeringDept.id,
     managerId: engManager.id,
     hireDate: new Date('2021-08-01'),
@@ -349,6 +399,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
     email: 'david.brown@company.com',
     displayName: 'David Brown',
     jobTitle: 'Digital Marketing Specialist',
+    role: UserRole.EMPLOYEE as any,
     departmentId: marketingDept.id,
     managerId: mktManager.id,
     hireDate: new Date('2021-04-10'),
@@ -380,6 +431,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
     email: 'lisa.taylor@company.com',
     displayName: 'Lisa Taylor',
     jobTitle: 'Content Marketing Manager',
+    role: UserRole.EMPLOYEE as any,
     departmentId: marketingDept.id,
     managerId: mktManager.id,
     hireDate: new Date('2021-09-15'),
@@ -973,6 +1025,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
 
   console.log('✅ Comprehensive data seeding completed successfully!');
   console.log('\n📊 Summary of created data:');
+  console.log('- 1 System Admin (System Administrator)');
   console.log('- 1 HR Admin (Sarah Johnson)');
   console.log('- 2 Managers (John Smith - Engineering, Emily Davis - Marketing)');
   console.log('- 4 Employees (2 Engineering, 2 Marketing)');
@@ -983,6 +1036,7 @@ export async function seedComprehensiveData(dataSource: DataSource) {
   console.log('- 2 Review Templates (Manager and Self-assessment)');
   console.log('- 6 Performance Reviews (Q1 manager reviews + Q2 self/peer reviews)');
   console.log('\n🔐 Login Credentials:');
+  console.log('System Admin: admin@company.com / password123');
   console.log('HR Admin: hr.admin@company.com / password123');
   console.log('Eng Manager: john.smith@company.com / password123');
   console.log('Mkt Manager: emily.davis@company.com / password123');

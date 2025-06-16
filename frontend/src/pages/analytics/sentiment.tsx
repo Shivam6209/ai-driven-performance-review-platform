@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
-import DashboardLayout from '@/layouts/DashboardLayout';
+import Layout from '@/components/layout/Layout';
 import SentimentTrendsChart from '@/components/analytics/SentimentTrendsChart';
 import BiasAlertsPanel from '@/components/analytics/BiasAlertsPanel';
 import { sentimentService, BiasSummary } from '@/services/sentiment.service';
@@ -162,7 +162,7 @@ const SentimentAnalyticsPage: NextPage = () => {
   }
 
   return (
-    <DashboardLayout>
+    <Layout>
       <Container maxWidth="xl">
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
@@ -198,7 +198,7 @@ const SentimentAnalyticsPage: NextPage = () => {
             </Select>
           </FormControl>
 
-          {currentUser?.role === 'hr_admin' && (
+          {currentUser?.role === 'hr' && (
             <FormControl size="small" sx={{ minWidth: 200 }}>
               <InputLabel id="department-select-label">Department</InputLabel>
               <Select
@@ -294,7 +294,7 @@ const SentimentAnalyticsPage: NextPage = () => {
           </Grid>
         </TabPanel>
       </Container>
-    </DashboardLayout>
+    </Layout>
   );
 };
 

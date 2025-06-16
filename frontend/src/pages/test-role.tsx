@@ -57,7 +57,7 @@ export default function TestRolePage(): JSX.Element {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'hr_admin': return 'error';
+      case 'hr': return 'error';
       case 'executive': return 'secondary';
       case 'manager': return 'warning';
       case 'employee': return 'primary';
@@ -67,7 +67,7 @@ export default function TestRolePage(): JSX.Element {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'hr_admin': return 'HR Admin';
+      case 'hr': return 'HR Admin';
       case 'executive': return 'Executive';
       case 'manager': return 'Manager';
       case 'employee': return 'Employee';
@@ -215,7 +215,7 @@ export default function TestRolePage(): JSX.Element {
                   </Typography>
                 </Box>
                 
-                {(currentUser.role === 'manager' || currentUser.role === 'hr_admin' || currentUser.role === 'executive') && (
+                {(currentUser.role === 'manager' || currentUser.role === 'hr' || currentUser.role === 'executive') && (
                   <Box>
                     <Typography variant="body2" color="text.secondary">
                       Manager+ Access:
@@ -226,7 +226,7 @@ export default function TestRolePage(): JSX.Element {
                   </Box>
                 )}
                 
-                {(currentUser.role === 'hr_admin' || currentUser.role === 'executive') && (
+                {(currentUser.role === 'hr' || currentUser.role === 'executive') && (
                   <Box>
                     <Typography variant="body2" color="text.secondary">
                       HR Admin+ Access:

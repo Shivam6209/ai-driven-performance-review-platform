@@ -10,122 +10,127 @@ import { CreateOkrUpdateDto } from './dto/create-okr-update.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('okr')
-@UseGuards(JwtAuthGuard)
 export class OkrController {
   constructor(private readonly okrService: OkrService) {}
 
   // Objective endpoints
   @Post('objectives')
-  createObjective(@Body() createObjectiveDto: CreateObjectiveDto) {
-    return this.okrService.createObjective(createObjectiveDto);
+  // No authentication guard - PUBLIC ROUTE
+  createObjective(@Body() createObjectiveDto: CreateObjectiveDto, @Request() req: any) {
+    // For public route, we need to handle missing user data
+    const userId = req.user?.id || 'anonymous';
+    const organizationId = req.user?.organizationId || 'default';
+    return this.okrService.createObjective(createObjectiveDto, userId, organizationId);
   }
 
   @Get('objectives')
-  findAllObjectives(@Query() query: any) {
-    return this.okrService.findAllObjectives(query);
+  @UseGuards(JwtAuthGuard)
+  findAllObjectives(@Query() query: any, @Request() req: any) {
+    return this.okrService.findAllObjectives(req.user.id, req.user.organizationId, query);
   }
 
   @Get('objectives/:id')
-  findObjectiveById(@Param('id') id: string) {
-    return this.okrService.findObjectiveById(id);
+  @UseGuards(JwtAuthGuard)
+  findObjectiveById(@Param('id') id: string, @Request() req: any) {
+    return this.okrService.findObjectiveById(id, req.user.id, req.user.organizationId);
   }
 
   @Patch('objectives/:id')
-  updateObjective(
-    @Param('id') id: string,
-    @Body() updateObjectiveDto: UpdateObjectiveDto,
-  ) {
-    return this.okrService.updateObjective(id, updateObjectiveDto);
+  @UseGuards(JwtAuthGuard)
+  updateObjective(@Param('id') id: string, @Body() updateObjectiveDto: UpdateObjectiveDto, @Request() req: any) {
+    return this.okrService.updateObjective(id, updateObjectiveDto, req.user.id, req.user.organizationId);
   }
 
   @Delete('objectives/:id')
-  removeObjective(@Param('id') id: string) {
-    return this.okrService.removeObjective(id);
+  @UseGuards(JwtAuthGuard)
+  removeObjective(@Param('id') id: string, @Request() req: any) {
+    return this.okrService.removeObjective(id, req.user.id, req.user.organizationId);
   }
 
   @Get('objectives/:id/alignment')
+  @UseGuards(JwtAuthGuard)
   getAlignmentData(@Param('id') id: string) {
     return this.okrService.getAlignmentData(id);
   }
 
   // Key Result endpoints
   @Post('key-results')
+  @UseGuards(JwtAuthGuard)
   createKeyResult(@Body() createKeyResultDto: CreateKeyResultDto) {
     return this.okrService.createKeyResult(createKeyResultDto);
   }
 
   @Get('objectives/:objectiveId/key-results')
+  @UseGuards(JwtAuthGuard)
   findAllKeyResults(@Param('objectiveId') objectiveId: string) {
     return this.okrService.findAllKeyResults(objectiveId);
   }
 
   @Get('key-results/:id')
+  @UseGuards(JwtAuthGuard)
   findKeyResultById(@Param('id') id: string) {
     return this.okrService.findKeyResultById(id);
   }
 
   @Patch('key-results/:id')
-  updateKeyResult(
-    @Param('id') id: string,
-    @Body() updateKeyResultDto: UpdateKeyResultDto,
-    @Request() req: any,
-  ) {
-    if (!updateKeyResultDto.updatedById) {
-      updateKeyResultDto.updatedById = req.user.userId;
-    }
+  @UseGuards(JwtAuthGuard)
+  updateKeyResult(@Param('id') id: string, @Body() updateKeyResultDto: UpdateKeyResultDto) {
     return this.okrService.updateKeyResult(id, updateKeyResultDto);
   }
 
   @Delete('key-results/:id')
+  @UseGuards(JwtAuthGuard)
   removeKeyResult(@Param('id') id: string) {
     return this.okrService.removeKeyResult(id);
   }
 
   // OKR Update endpoints
   @Post('updates')
-  createUpdate(@Body() createOkrUpdateDto: CreateOkrUpdateDto, @Request() req: any) {
-    if (!createOkrUpdateDto.updatedById) {
-      createOkrUpdateDto.updatedById = req.user.userId;
-    }
+  @UseGuards(JwtAuthGuard)
+  createUpdate(@Body() createOkrUpdateDto: CreateOkrUpdateDto) {
     return this.okrService.createUpdate(createOkrUpdateDto);
   }
 
   @Get('key-results/:keyResultId/updates')
+  @UseGuards(JwtAuthGuard)
   getUpdatesForKeyResult(@Param('keyResultId') keyResultId: string) {
     return this.okrService.getUpdatesForKeyResult(keyResultId);
   }
 
   // OKR Category endpoints
   @Post('categories')
+  @UseGuards(JwtAuthGuard)
   createCategory(@Body() createOkrCategoryDto: CreateOkrCategoryDto) {
     return this.okrService.createCategory(createOkrCategoryDto);
   }
 
   @Get('categories')
+  @UseGuards(JwtAuthGuard)
   findAllCategories() {
     return this.okrService.findAllCategories();
   }
 
   @Get('categories/:id')
+  @UseGuards(JwtAuthGuard)
   findCategoryById(@Param('id') id: string) {
     return this.okrService.findCategoryById(id);
   }
 
   @Patch('categories/:id')
-  updateCategory(
-    @Param('id') id: string,
-    @Body() updateOkrCategoryDto: UpdateOkrCategoryDto,
-  ) {
+  @UseGuards(JwtAuthGuard)
+  updateCategory(@Param('id') id: string, @Body() updateOkrCategoryDto: UpdateOkrCategoryDto) {
     return this.okrService.updateCategory(id, updateOkrCategoryDto);
   }
 
   @Delete('categories/:id')
+  @UseGuards(JwtAuthGuard)
   removeCategory(@Param('id') id: string) {
     return this.okrService.removeCategory(id);
   }
 
   // Team Progress
   @Get('team-progress/:managerId')
+  @UseGuards(JwtAuthGuard)
   getTeamProgress(@Param('managerId') managerId: string) {
     return this.okrService.getTeamProgress(managerId);
   }

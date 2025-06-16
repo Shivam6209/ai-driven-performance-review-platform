@@ -25,9 +25,15 @@ export class PerformanceReview {
   @JoinColumn({ name: 'employee_id' })
   employee!: Employee;
 
-  @ManyToOne(() => Employee)
+  @Column({ name: 'reviewer_id', nullable: true })
+  reviewer_id?: string;
+
+  @ManyToOne(() => Employee, { nullable: true })
   @JoinColumn({ name: 'reviewer_id' })
-  reviewer!: Employee;
+  reviewer?: Employee;
+
+  @Column({ name: 'review_cycle_id' })
+  review_cycle_id!: string;
 
   @ManyToOne(() => ReviewCycle, (cycle) => cycle.reviews)
   @JoinColumn({ name: 'review_cycle_id' })
@@ -42,7 +48,7 @@ export class PerformanceReview {
 
   @Column({
     type: 'enum',
-    enum: ['draft', 'in_progress', 'submitted', 'approved', 'rejected'],
+    enum: ['draft', 'in_progress', 'submitted', 'approved', 'rejected', 'ai_generated'],
     default: 'draft',
   })
   status!: string;
@@ -62,6 +68,60 @@ export class PerformanceReview {
 
   @Column({ name: 'due_date' })
   due_date!: Date;
+
+  // AI-specific fields
+  @Column({ name: 'is_ai_generated', default: false })
+  is_ai_generated!: boolean;
+
+  @Column({ name: 'ai_confidence_score', type: 'decimal', precision: 3, scale: 2, nullable: true })
+  ai_confidence_score?: number;
+
+  @Column({ name: 'ai_generated_at', nullable: true })
+  ai_generated_at?: Date;
+
+  @Column({ name: 'ai_sources', type: 'jsonb', nullable: true })
+  ai_sources?: {
+    okrs: string[];
+    feedback: string[];
+    projects: string[];
+    goals: string[];
+  };
+
+  @Column({ name: 'human_edited', default: false })
+  human_edited!: boolean;
+
+  @Column({ name: 'human_edited_at', nullable: true })
+  human_edited_at?: Date;
+
+  @ManyToOne(() => Employee, { nullable: true })
+  @JoinColumn({ name: 'human_edited_by_id' })
+  human_edited_by?: Employee;
+
+  // Review content fields
+  @Column({ type: 'text', nullable: true })
+  strengths?: string;
+
+  @Column({ type: 'text', nullable: true })
+  areas_for_improvement?: string;
+
+  @Column({ type: 'text', nullable: true })
+  achievements?: string;
+
+  @Column({ type: 'text', nullable: true })
+  goals_for_next_period?: string;
+
+  @Column({ type: 'text', nullable: true })
+  manager_comments?: string;
+
+  @Column({ type: 'text', nullable: true })
+  employee_comments?: string;
+
+  @Column({ type: 'text', nullable: true })
+  development_plan?: string;
+
+  // Organization relationship
+  @Column({ name: 'organization_id', nullable: true })
+  organizationId?: string;
 
   @OneToMany(() => ReviewSection, (section) => section.review)
   sections!: ReviewSection[];

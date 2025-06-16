@@ -25,6 +25,7 @@ import {
   Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { NotificationBell } from '../notifications/NotificationBell';
 
 /**
  * Clean, Simple Header Design
@@ -182,14 +183,16 @@ const Header: React.FC = () => {
 
         {/* Simple Action Buttons */}
         <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton
-            size="medium"
+          <Box
             sx={{
               color: theme.palette.text.secondary,
               backgroundColor: alpha(theme.palette.primary.main, 0.05),
               borderRadius: 2.5,
               width: 44,
               height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
                 backgroundColor: alpha(theme.palette.primary.main, 0.1),
@@ -199,22 +202,8 @@ const Header: React.FC = () => {
               },
             }}
           >
-            <Badge 
-              badgeContent={3} 
-              color="error"
-              sx={{
-                '& .MuiBadge-badge': {
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  minWidth: 18,
-                  height: 18,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                }
-              }}
-            >
-              <NotificationsIcon sx={{ fontSize: 20 }} />
-            </Badge>
-          </IconButton>
+            <NotificationBell />
+          </Box>
 
 
 

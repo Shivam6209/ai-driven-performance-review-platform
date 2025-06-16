@@ -21,7 +21,7 @@ export interface CreateInvitationRequest {
   firstName: string;
   lastName: string;
   jobTitle?: string;
-  role: 'ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE';
+  role: 'admin' | 'hr' | 'manager' | 'employee';
   permissions?: string[];
   organizationId: string;
 }

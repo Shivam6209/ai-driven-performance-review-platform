@@ -18,6 +18,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserRole } from './enums/user-role.enum';
 import { InvitationStatus } from '../invitations/entities/invitation.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +34,7 @@ export class AuthService {
     @InjectRepository(Department)
     private departmentRepository: Repository<Department>,
     private jwtService: JwtService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -68,6 +70,34 @@ export class AuthService {
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check if there's a pending invitation for this user and accept it
+    const pendingInvitation = await this.invitationRepository.findOne({
+      where: { 
+        email: user.email,
+        status: InvitationStatus.PENDING 
+      }
+    });
+
+    if (pendingInvitation) {
+      // Accept the invitation automatically on successful login
+      pendingInvitation.status = InvitationStatus.ACCEPTED;
+      await this.invitationRepository.save(pendingInvitation);
+      console.log(`✅ Automatically accepted invitation for ${user.email}`);
+
+      // Send real-time notification to the invitor
+      try {
+        const inviteeName = user.employee ? `${user.employee.firstName} ${user.employee.lastName}` : user.email;
+        await this.notificationsService.sendInvitationAcceptedNotification(
+          pendingInvitation.invitedBy,
+          user.email,
+          inviteeName
+        );
+        console.log(`🔔 Sent invitation accepted notification to invitor ${pendingInvitation.invitedBy}`);
+      } catch (error) {
+        console.error('❌ Failed to send invitation accepted notification:', error);
+      }
     }
 
     const payload = {
@@ -246,7 +276,7 @@ export class AuthService {
 
     // Update department head
     await this.departmentRepository.update(savedHrDepartment.id, {
-      headId: savedEmployee.id,
+      manager: savedEmployee,
     });
 
     // Generate JWT token
@@ -467,8 +497,8 @@ export class AuthService {
     try {
       const user = await this.usersRepository.findOne({
         where: { id: userId, isActive: true },
-        relations: ['employee', 'employee.department', 'employee.manager'],
-        select: ['id', 'email', 'role', 'isActive', 'lastLogin', 'createdAt', 'employeeId']
+        relations: ['employee', 'employee.department', 'employee.manager', 'organization'],
+        select: ['id', 'email', 'role', 'isActive', 'lastLogin', 'createdAt', 'employeeId', 'organizationId']
       });
       
       if (!user) {
@@ -483,6 +513,8 @@ export class AuthService {
         lastLogin: user.lastLogin,
         createdAt: user.createdAt,
         employeeId: user.employeeId,
+        organizationId: user.organizationId,
+        organization: user.organization,
         // Employee information
         firstName: user.employee?.firstName,
         lastName: user.employee?.lastName,

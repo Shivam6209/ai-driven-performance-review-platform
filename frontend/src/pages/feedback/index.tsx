@@ -34,7 +34,7 @@ import {
   Person as PersonIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
-import DashboardLayout from '@/layouts/DashboardLayout';
+import Layout from '@/components/layout/Layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { feedbackService } from '@/services/feedback.service';
 import { employeeService } from '@/services/employeeService';
@@ -244,7 +244,7 @@ export default function FeedbackPage(): JSX.Element {
 
   return (
     <ProtectedRoute>
-      <DashboardLayout>
+      <Layout>
         <Container maxWidth="lg">
           <Box sx={{ mb: 4 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -514,7 +514,7 @@ export default function FeedbackPage(): JSX.Element {
             </Button>
           </DialogActions>
         </Dialog>
-      </DashboardLayout>
+      </Layout>
     </ProtectedRoute>
   );
 } 

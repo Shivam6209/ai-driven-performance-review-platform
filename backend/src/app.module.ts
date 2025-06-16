@@ -10,7 +10,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
-import { AiModule } from './modules/ai/ai.module';
+import { AIModule } from './modules/ai/ai.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { EmailModule } from './modules/email/email.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
@@ -18,6 +18,7 @@ import { DocumentationModule } from './modules/documentation/documentation.modul
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import databaseConfig, { redisConfig } from './config/database.config';
 import appConfig from './config/app.config';
@@ -76,7 +77,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     DepartmentsModule,
     RbacModule,
     ComplianceModule,
-    AiModule,
+    AIModule,
     ProjectsModule,
     EmailModule,
     IntegrationsModule,
@@ -84,6 +85,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     DashboardModule,
     OrganizationsModule,
     InvitationsModule,
+    NotificationsModule,
   ],
   providers: [
     {

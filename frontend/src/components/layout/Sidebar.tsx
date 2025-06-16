@@ -24,6 +24,8 @@ import {
   RateReview as ReviewsIcon,
   Person as ProfileIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+  PersonAdd as InviteIcon,
+  Groups as EmployeesIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -43,6 +45,9 @@ const Sidebar: React.FC = () => {
   const router = useRouter();
   const { currentUser } = useAuth();
   const userRole = currentUser?.role || 'employee';
+  
+  // Debug: Log the current user role
+  console.log('Current user role:', userRole, 'Current user:', currentUser);
 
   // Simplified navigation items
   const navigation: NavItem[] = [
@@ -50,50 +55,64 @@ const Sidebar: React.FC = () => {
       name: 'Dashboard', 
       href: '/dashboard', 
       icon: <DashboardIcon />, 
-      roles: ['employee', 'manager', 'hr_admin', 'executive'],
+      roles: ['employee', 'manager', 'hr', 'admin'],
     },
     { 
       name: 'My Profile', 
       href: '/profile', 
       icon: <ProfileIcon />, 
-      roles: ['employee', 'manager', 'hr_admin', 'executive'],
+      roles: ['employee', 'manager', 'hr', 'admin'],
     },
     { 
       name: 'OKRs & Goals', 
       href: '/okrs', 
       icon: <OKRsIcon />, 
-      roles: ['employee', 'manager', 'hr_admin', 'executive'],
+      roles: ['employee', 'manager', 'hr', 'admin'],
     },
     { 
       name: 'Reviews', 
       href: '/reviews', 
       icon: <ReviewsIcon />, 
-      roles: ['employee', 'manager', 'hr_admin'],
+      roles: ['employee', 'manager', 'hr', 'admin'],
       badge: 'New',
     },
     { 
       name: 'Feedback', 
       href: '/feedback', 
       icon: <FeedbackIcon />, 
-      roles: ['employee', 'manager', 'hr_admin'],
+      roles: ['employee', 'manager', 'hr', 'admin'],
     },
     { 
       name: 'Analytics', 
       href: '/analytics', 
       icon: <AnalyticsIcon />, 
-      roles: ['manager', 'hr_admin', 'executive'],
+      roles: ['manager', 'hr', 'admin'],
     },
     { 
-      name: 'Team Management', 
-      href: '/team', 
-      icon: <TeamIcon />, 
-      roles: ['manager', 'hr_admin'],
+      name: 'Employee Management', 
+      href: '/employees', 
+      icon: <EmployeesIcon />, 
+      roles: ['manager', 'hr', 'admin'],
+    },
+    { 
+      name: 'Organization Setup', 
+      href: '/admin/organization', 
+      icon: <AdminPanelSettingsIcon />, 
+      roles: ['admin'],
+      badge: 'Admin',
+    },
+    { 
+      name: 'Invite Users', 
+      href: '/admin/invitations', 
+      icon: <InviteIcon />, 
+      roles: ['admin'],
+      badge: 'Admin',
     },
     { 
       name: 'RBAC Management', 
       href: '/admin/rbac', 
       icon: <AdminPanelSettingsIcon />, 
-      roles: ['hr_admin'],
+      roles: ['admin'],
       badge: 'Admin',
     },
   ];
@@ -116,9 +135,10 @@ const Sidebar: React.FC = () => {
           boxSizing: 'border-box',
           backgroundColor: theme.palette.background.paper,
           borderRight: `1px solid ${theme.palette.divider}`,
-          boxShadow: 'none',
-          position: 'static',
-          height: '100%',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          position: 'relative',
+          height: '100vh',
+          overflowY: 'auto',
         },
       }}
     >

@@ -79,12 +79,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   ];
 
   // Add admin-specific menu items
-  if (currentUser?.role === 'hr_admin' || currentUser?.role === 'executive') {
+      if (currentUser?.role === 'hr' || currentUser?.role === 'executive') {
     menuItems.push({ text: 'Team Management', icon: <PeopleIcon />, href: '/team' });
   }
 
   // Add RBAC management for HR admins only
-  if (currentUser?.role === 'hr_admin') {
+      if (currentUser?.role === 'hr') {
     menuItems.push({ text: 'RBAC Management', icon: <AdminPanelSettingsIcon />, href: '/admin/rbac' });
   }
 

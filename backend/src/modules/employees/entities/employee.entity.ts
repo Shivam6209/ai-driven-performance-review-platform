@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  ManyToMany,
   OneToMany,
   OneToOne,
   JoinColumn,
@@ -38,6 +39,9 @@ export class Employee {
 
   @Column({ name: 'job_title', nullable: true })
   jobTitle?: string;
+
+  @Column({ name: 'role' })
+  role!: 'admin' | 'hr' | 'manager' | 'employee';
 
   @Column({ name: 'phone_number', nullable: true })
   phoneNumber?: string;
@@ -85,6 +89,10 @@ export class Employee {
   @ManyToOne(() => Department, (department) => department.employees, { nullable: true })
   @JoinColumn({ name: 'department_id' })
   department?: Department;
+
+  // HR Departments relationship (many-to-many for HR personnel)
+  @ManyToMany(() => Department, (department) => department.hrPersonnel)
+  hrDepartments!: Department[];
 
   // Manager relationship (self-referencing)
   @Column({ name: 'manager_id', nullable: true })

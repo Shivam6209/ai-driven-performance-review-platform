@@ -6,6 +6,8 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  ManyToMany,
+  JoinTable,
   JoinColumn,
   Unique,
 } from 'typeorm';
@@ -34,15 +36,23 @@ export class Department {
   @OneToMany(() => Department, (department) => department.parentDepartment)
   childDepartments!: Department[];
 
-  @Column({ name: 'head_id', nullable: true })
-  headId?: string;
+  @Column({ name: 'manager_id', nullable: true })
+  managerId?: string;
 
   @ManyToOne(() => Employee, { nullable: true })
-  @JoinColumn({ name: 'head_id' })
-  head?: Employee;
+  @JoinColumn({ name: 'manager_id' })
+  manager?: Employee;
 
   @OneToMany(() => Employee, (employee) => employee.department)
   employees!: Employee[];
+
+  @ManyToMany(() => Employee, (employee) => employee.hrDepartments)
+  @JoinTable({
+    name: 'department_hr_personnel',
+    joinColumn: { name: 'department_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'employee_id', referencedColumnName: 'id' }
+  })
+  hrPersonnel!: Employee[];
 
   // Organization relationship
   @Column({ name: 'organization_id', nullable: true })

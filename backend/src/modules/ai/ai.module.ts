@@ -1,27 +1,38 @@
 import { Module } from '@nestjs/common';
-import { AiController } from './ai.controller';
-import { AiService } from './ai.service';
-import { EmbeddingService } from './embedding.service';
-import { SentimentService } from './sentiment.service';
-import { SentimentController } from './sentiment.controller';
-import { AiMonitoringService } from './ai-monitoring.service';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AiGeneration } from './entities/ai-generation.entity';
-import { EmployeesModule } from '../employees/employees.module';
-import { FeedbackModule } from '../feedback/feedback.module';
-import { OkrModule } from '../okr/okr.module';
-import { ProjectsModule } from '../projects/projects.module';
+import { OpenAIService } from './services/openai.service';
+import { PineconeService } from './services/pinecone.service';
+import { VectorEmbeddingService } from './services/vector-embedding.service';
+import { AIReviewGeneratorService } from './services/ai-review-generator.service';
+import { Employee } from '../employees/entities/employee.entity';
+import { Feedback } from '../feedback/entities/feedback.entity';
+import { Objective } from '../okr/entities/objective.entity';
+import { KeyResult } from '../okr/entities/key-result.entity';
+import { PerformanceReview } from '../reviews/entities/performance-review.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AiGeneration]),
-    EmployeesModule,
-    FeedbackModule,
-    OkrModule,
-    ProjectsModule,
+    ConfigModule,
+    TypeOrmModule.forFeature([
+      Employee,
+      Feedback,
+      Objective,
+      KeyResult,
+      PerformanceReview,
+    ]),
   ],
-  controllers: [AiController, SentimentController],
-  providers: [AiService, EmbeddingService, SentimentService, AiMonitoringService],
-  exports: [AiService, EmbeddingService, SentimentService, AiMonitoringService],
+  providers: [
+    OpenAIService,
+    PineconeService,
+    VectorEmbeddingService,
+    AIReviewGeneratorService,
+  ],
+  exports: [
+    OpenAIService,
+    PineconeService,
+    VectorEmbeddingService,
+    AIReviewGeneratorService,
+  ],
 })
-export class AiModule {} 
+export class AIModule {} 

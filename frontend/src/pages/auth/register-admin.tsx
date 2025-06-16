@@ -107,15 +107,16 @@ const RegisterAdminPage: React.FC = () => {
           flex: 1,
           backgroundColor: 'white',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', md: 'center' },
           justifyContent: 'center',
           p: 4,
           overflowY: 'auto',
+          height: '100vh',
         }}
       >
-        <Box sx={{ width: '100%', maxWidth: 450 }}>
+        <Box sx={{ width: '100%', maxWidth: 450, py: { xs: 2, md: 0 } }}>
           {/* Back Button */}
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mb: 3 }}>
             <Button
               component={Link}
               href="/auth/register"
@@ -133,7 +134,7 @@ const RegisterAdminPage: React.FC = () => {
           </Box>
 
           {/* Logo */}
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2.5 }}>
             <Box
               sx={{
                 width: 44,
@@ -219,7 +220,7 @@ const RegisterAdminPage: React.FC = () => {
           </Stack>
 
           {/* Header */}
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mb: 3 }}>
             <Typography
               variant="h4"
               sx={{
@@ -246,16 +247,16 @@ const RegisterAdminPage: React.FC = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 4,
+              p: 3,
               border: `1px solid ${theme.palette.divider}`,
               borderRadius: 2,
             }}
           >
             <form onSubmit={handleSubmit}>
-              <Stack spacing={3}>
+              <Stack spacing={2.5}>
                 {/* Personal Information */}
                 <Box>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 600 }}>
                     Personal Information
                   </Typography>
                   <Stack direction="row" spacing={2}>
@@ -306,7 +307,7 @@ const RegisterAdminPage: React.FC = () => {
 
                 {/* Organization Information */}
                 <Box>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 600 }}>
                     Organization Details
                   </Typography>
                   <TextField
@@ -331,10 +332,10 @@ const RegisterAdminPage: React.FC = () => {
 
                 {/* Password */}
                 <Box>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 600 }}>
                     Security
                   </Typography>
-                  <Stack spacing={2}>
+                  <Stack spacing={1.5}>
                     <TextField
                       fullWidth
                       label="Password"
@@ -391,7 +392,7 @@ const RegisterAdminPage: React.FC = () => {
                 </Box>
 
                 {error && (
-                  <Alert severity="error" sx={{ mt: 2 }}>
+                  <Alert severity="error" sx={{ mt: 1 }}>
                     {error}
                   </Alert>
                 )}
@@ -403,7 +404,7 @@ const RegisterAdminPage: React.FC = () => {
                   size="large"
                   disabled={isLoading}
                   sx={{
-                    mt: 3,
+                    mt: 2,
                     py: 1.5,
                     textTransform: 'none',
                     fontWeight: 600,
@@ -420,7 +421,7 @@ const RegisterAdminPage: React.FC = () => {
                   )}
                 </Button>
 
-                <Divider sx={{ my: 2 }} />
+                <Divider sx={{ my: 1.5 }} />
 
                 {/* Links */}
                 <Box sx={{ textAlign: 'center' }}>
@@ -477,6 +478,7 @@ const RegisterAdminPage: React.FC = () => {
           overflow: 'hidden',
           color: 'white',
           p: 6,
+          height: '100vh',
         }}
       >
         {/* Background Pattern */}
