@@ -19,25 +19,52 @@ class ApiService {
     // Request interceptor
     this.api.interceptors.request.use(
       async (config: any) => {
+        console.log('🌐 API Service - Request:', {
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          baseURL: config.baseURL,
+          fullURL: `${config.baseURL}${config.url}`
+        });
+        
         if (typeof window !== 'undefined') {
           const token = localStorage.getItem('auth_token');
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            console.log('🔑 API Service - Added auth token to request');
+          } else {
+            console.log('⚠️ API Service - No auth token found');
           }
         }
         return config;
       },
       (error: any) => {
+        console.log('❌ API Service - Request error:', error);
         return Promise.reject(error);
       }
     );
 
     // Response interceptor
     this.api.interceptors.response.use(
-      (response: any) => response,
+      (response: any) => {
+        console.log('✅ API Service - Response success:', {
+          status: response.status,
+          url: response.config.url,
+          dataType: typeof response.data,
+          dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+        });
+        return response;
+      },
       async (error: any) => {
+        console.log('❌ API Service - Response error:', {
+          status: error.response?.status,
+          url: error.config?.url,
+          message: error.message,
+          data: error.response?.data
+        });
+        
         if (error.response?.status === 401) {
-          console.log('🔐 API: 401 Unauthorized received');
+          console.log('🚨 API Service - 401 Unauthorized received');
+          console.log('🔑 Current token:', localStorage.getItem('auth_token'));
           // Don't automatically sign out or redirect here
           // Let the component handle the error appropriately
           // This prevents redirect loops and gives better user experience

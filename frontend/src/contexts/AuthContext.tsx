@@ -36,22 +36,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check for stored token and validate with backend
     const checkAuthState = async () => {
+      console.log('🔄 AuthContext - Checking auth state...');
       const token = localStorage.getItem('auth_token');
+      console.log('🔑 Token found:', !!token);
+      
       if (token) {
         try {
+          console.log('🔍 Validating token with backend...');
           // Validate token with backend
           const user = await authService.getCurrentUser();
           setCurrentUser(user);
-          console.log('Auth state restored:', user.email);
+          console.log('✅ Auth state restored successfully');
+          console.log('👤 Restored User:', {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName
+          });
         } catch (error) {
-          console.log('Token validation failed:', error);
+          console.log('❌ Token validation failed:', error);
           localStorage.removeItem('auth_token');
           setCurrentUser(null);
         }
       } else {
+        console.log('❌ No token found, user not authenticated');
         setCurrentUser(null);
       }
       setLoading(false);
+      console.log('🏁 Auth state check completed');
     };
 
     checkAuthState();

@@ -16,6 +16,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { AssignRoleDto } from './dto/assign-role.dto';
+import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RbacGuard } from './guards/rbac.guard';
 import { RequirePermissions } from './decorators/require-permissions.decorator';
@@ -163,5 +164,45 @@ export class RbacController {
     );
     
     return { hasPermission };
+  }
+
+  // User permission management endpoints
+  @Post('user-permissions')
+  @UseGuards(RbacGuard)
+  @RequirePermissions('rbac', 'assign_role')
+  @ApiOperation({ summary: 'Update user-specific permissions' })
+  @ApiResponse({ status: 200, description: 'User permissions updated successfully' })
+  async updateUserPermissions(
+    @Body() updateDto: UpdateUserPermissionsDto,
+    @Request() req: any
+  ) {
+    return this.rbacService.updateUserPermissions(updateDto, req.user.userId);
+  }
+
+  @Get('user-permissions/:employeeId')
+  @UseGuards(RbacGuard)
+  @RequirePermissions('rbac', 'read_roles')
+  @ApiOperation({ summary: 'Get user-specific permissions' })
+  getUserPermissions(@Param('employeeId') employeeId: string) {
+    return this.rbacService.getUserPermissions(employeeId);
+  }
+
+  @Get('all-permissions/:employeeId')
+  @Public()
+  @ApiOperation({ summary: 'Get all permissions for a user (role-based and user-specific)' })
+  getAllUserPermissions(@Param('employeeId') employeeId: string) {
+    return this.rbacService.getAllUserPermissions(employeeId);
+  }
+
+  @Delete('user-permissions/:employeeId/:resource/:action')
+  @UseGuards(RbacGuard)
+  @RequirePermissions('rbac', 'revoke_role')
+  @ApiOperation({ summary: 'Remove a user-specific permission' })
+  removeUserPermission(
+    @Param('employeeId') employeeId: string,
+    @Param('resource') resource: string,
+    @Param('action') action: string
+  ) {
+    return this.rbacService.removeUserPermission(employeeId, resource, action);
   }
 } 

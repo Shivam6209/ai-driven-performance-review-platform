@@ -24,7 +24,13 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "seed:comprehensive": "ts-node -r tsconfig-paths/register src/database/seeds/run-comprehensive-seed.ts",
-    "bootstrap:rbac": "ts-node -r tsconfig-paths/register src/scripts/bootstrap-rbac.ts"
+    "bootstrap:rbac": "ts-node -r tsconfig-paths/register src/scripts/bootstrap-rbac.ts",
+    "fix:rbac": "ts-node -r tsconfig-paths/register src/scripts/fix-rbac-roles.ts",
+    "diagnose:rbac": "ts-node -r tsconfig-paths/register src/scripts/diagnose-rbac.ts",
+    "comprehensive-fix:rbac": "ts-node -r tsconfig-paths/register src/scripts/comprehensive-rbac-fix.ts",
+    "assign-admin:rbac": "ts-node -r tsconfig-paths/register src/scripts/assign-admin-role.ts",
+    "check-admin:rbac": "ts-node -r tsconfig-paths/register src/scripts/check-admin-permissions.ts",
+    "create-admin:rbac": "ts-node -r tsconfig-paths/register src/scripts/create-admin-employee.ts"
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.0.2",

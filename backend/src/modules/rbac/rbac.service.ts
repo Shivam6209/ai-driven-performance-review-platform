@@ -4,11 +4,14 @@ import { Repository, In } from 'typeorm';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { RoleAssignment } from './entities/role-assignment.entity';
+import { UserPermission } from './entities/user-permission.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { AssignRoleDto } from './dto/assign-role.dto';
+import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { Employee } from '../employees/entities/employee.entity';
+import { User } from '../auth/entities/user.entity';
 
 @Injectable()
 export class RbacService {
@@ -21,13 +24,17 @@ export class RbacService {
     private permissionRepository: Repository<Permission>,
     @InjectRepository(RoleAssignment)
     private roleAssignmentRepository: Repository<RoleAssignment>,
+    @InjectRepository(UserPermission)
+    private userPermissionRepository: Repository<UserPermission>,
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   // Role management
   async createRole(createRoleDto: CreateRoleDto): Promise<Role> {
-    const { name, description } = createRoleDto;
+    const { name, description, permissionIds } = createRoleDto;
     
     const role = this.roleRepository.create({
       name,
@@ -37,7 +44,23 @@ export class RbacService {
       parent_role_id: createRoleDto.parent_role_id,
     });
 
-    return await this.roleRepository.save(role);
+    // Save the role first
+    const savedRole = await this.roleRepository.save(role);
+
+    // If permissions are provided, assign them to the role
+    if (permissionIds && permissionIds.length > 0) {
+      const permissions = await this.permissionRepository.find({
+        where: { id: In(permissionIds) },
+      });
+      
+      if (permissions.length > 0) {
+        savedRole.permissions = permissions;
+        await this.roleRepository.save(savedRole);
+        this.logger.log(`Assigned ${permissions.length} permissions to role '${savedRole.name}'`);
+      }
+    }
+
+    return savedRole;
   }
 
   async updateRole(id: string, updateRoleDto: UpdateRoleDto): Promise<Role> {
@@ -138,13 +161,12 @@ export class RbacService {
   }
 
   async getAllPermissions(): Promise<Permission[]> {
-    // Only return permissions that are actually assigned to roles
-    return this.permissionRepository
-      .createQueryBuilder('permission')
-      .innerJoin('role_permissions', 'rp', 'rp.permission_id = permission.id')
-      .orderBy('permission.resource', 'ASC')
-      .addOrderBy('permission.action', 'ASC')
-      .getMany();
+    return this.permissionRepository.find({
+      order: { 
+        resource: 'ASC',
+        action: 'ASC' 
+      },
+    });
   }
 
   // Role assignment
@@ -182,10 +204,12 @@ export class RbacService {
     assignment.role = role;
     assignment.employee = employee;
     assignment.scope = scope || {};
+    assignment.assigned_by_id = grantedBy || employeeId; // Use grantedBy or self-assign
+    assignment.assigned_at = new Date();
+    assignment.granted_by = grantedBy || employeeId; // Use grantedBy or self-assign
+    assignment.valid_from = validFrom ? new Date(validFrom) : new Date();
     if (contextType) assignment.context_type = contextType;
     if (contextId) assignment.context_id = contextId;
-    if (grantedBy) assignment.granted_by = grantedBy;
-    if (validFrom) assignment.valid_from = new Date(validFrom);
     if (validUntil) assignment.valid_until = new Date(validUntil);
     assignment.is_active = true;
 
@@ -339,5 +363,213 @@ export class RbacService {
     });
     
     return this.roleAssignmentRepository.save(delegatedAssignment);
+  }
+
+  // User-specific permission management
+  async updateUserPermissions(updateDto: UpdateUserPermissionsDto, grantedBy: string): Promise<UserPermission[]> {
+    const { employeeId, permissions } = updateDto;
+    
+    // Check if employee exists
+    const employee = await this.employeeRepository.findOne({ where: { id: employeeId } });
+    if (!employee) {
+      throw new Error(`Employee with id ${employeeId} not found`);
+    }
+
+    const results: UserPermission[] = [];
+
+    for (const permissionDto of permissions) {
+      const { resource, action, granted = true } = permissionDto;
+
+      // Check if user permission already exists
+      let userPermission = await this.userPermissionRepository.findOne({
+        where: {
+          employee_id: employeeId,
+          resource,
+          action,
+        },
+      });
+
+      if (userPermission) {
+        // Update existing permission
+        userPermission.granted = granted;
+        userPermission.granted_by = grantedBy;
+        userPermission = await this.userPermissionRepository.save(userPermission);
+      } else {
+        // Create new permission
+        userPermission = this.userPermissionRepository.create({
+          employee_id: employeeId,
+          resource,
+          action,
+          granted,
+          granted_by: grantedBy,
+        });
+        userPermission = await this.userPermissionRepository.save(userPermission);
+      }
+
+      results.push(userPermission);
+    }
+
+    return results;
+  }
+
+  async getUserPermissions(employeeId: string): Promise<UserPermission[]> {
+    return this.userPermissionRepository.find({
+      where: { employee_id: employeeId },
+      relations: ['employee', 'granter'],
+      order: { resource: 'ASC', action: 'ASC' },
+    });
+  }
+
+  async removeUserPermission(employeeId: string, resource: string, action: string): Promise<void> {
+    const userPermission = await this.userPermissionRepository.findOne({
+      where: {
+        employee_id: employeeId,
+        resource,
+        action,
+      },
+    });
+
+    if (userPermission) {
+      await this.userPermissionRepository.remove(userPermission);
+    }
+  }
+
+  // Enhanced permission checking that includes user-specific permissions
+  async hasPermissionEnhanced(employeeId: string, resource: string, action: string, contextId?: string): Promise<boolean> {
+    try {
+      // First check user-specific permissions (these override role permissions)
+      const userPermission = await this.userPermissionRepository.findOne({
+        where: {
+          employee_id: employeeId,
+          resource,
+          action,
+        },
+      });
+
+      // If user has explicit permission (granted or denied), use that
+      if (userPermission) {
+        return userPermission.granted;
+      }
+
+      // Fall back to role-based permissions
+      return this.hasPermission(employeeId, resource, action, contextId);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error checking enhanced permissions';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Error checking enhanced permissions: ${errorMessage}`, errorStack);
+      return false;
+    }
+  }
+
+  // Get all permissions for a user (both role-based and user-specific)
+  async getAllUserPermissions(employeeId: string): Promise<{
+    rolePermissions: { resource: string; action: string; source: string }[];
+    userPermissions: { resource: string; action: string; granted: boolean }[];
+  }> {
+    // Get role-based permissions
+    const roleAssignments = await this.getEmployeeRoles(employeeId);
+    const rolePermissions: { resource: string; action: string; source: string }[] = [];
+    
+    roleAssignments.forEach(assignment => {
+      assignment.role.permissions.forEach(permission => {
+        rolePermissions.push({
+          resource: permission.resource,
+          action: permission.action,
+          source: assignment.role.name,
+        });
+      });
+    });
+
+    // Get user-specific permissions
+    const userPermissions = await this.getUserPermissions(employeeId);
+    const userPerms = userPermissions.map(up => ({
+      resource: up.resource,
+      action: up.action,
+      granted: up.granted,
+    }));
+
+    return {
+      rolePermissions,
+      userPermissions: userPerms,
+    };
+  }
+
+  // Auto-assign RBAC role based on user's auth role
+  async syncUserRole(employeeId: string, userRole: string): Promise<void> {
+    try {
+      // Get the user from auth system
+      const user = await this.userRepository.findOne({ 
+        where: { id: employeeId },
+        relations: ['employee']
+      });
+      
+      if (!user) {
+        this.logger.warn(`User with id ${employeeId} not found in auth system`);
+        return;
+      }
+
+      let employee = user.employee;
+
+      // If user doesn't have an employee record linked, check if one exists with same email
+      if (!employee) {
+        const existingEmployee = await this.employeeRepository.findOne({ where: { email: user.email } });
+        
+        if (existingEmployee) {
+          // Link existing employee to user
+          employee = existingEmployee;
+          user.employeeId = existingEmployee.id;
+          await this.userRepository.save(user);
+          this.logger.log(`Linked existing employee ${existingEmployee.id} to user ${user.id}`);
+        } else {
+          // Only create if no employee exists with this email
+          this.logger.log(`Creating new employee record for user: ${user.email}`);
+          employee = this.employeeRepository.create({
+            id: employeeId,
+            email: user.email,
+            firstName: 'User', // Default - should be updated by user later
+            lastName: 'Account', // Default - should be updated by user later
+            employeeCode: `EMP-${employeeId.substring(0, 8)}`,
+            role: userRole as 'admin' | 'hr' | 'manager' | 'employee', // Role from auth system (UI-driven)
+            isActive: true,
+            hireDate: new Date(),
+          });
+          
+          employee = await this.employeeRepository.save(employee);
+          
+          // Link the new employee to the user
+          user.employeeId = employee.id;
+          await this.userRepository.save(user);
+          
+          this.logger.log(`Created and linked new employee record for user: ${user.email}`);
+        }
+      }
+
+      // Find the RBAC role that matches the user's auth role
+      const roles = await this.getAllRoles();
+      const matchingRole = roles.find(role => role.name === userRole);
+      
+      if (!matchingRole) {
+        this.logger.warn(`No RBAC role found for user role: ${userRole}`);
+        return;
+      }
+
+      // Check if user already has this role assigned
+      const existingAssignments = await this.getEmployeeRoles(employee.id);
+      const hasRole = existingAssignments.some(assignment => assignment.role.id === matchingRole.id);
+      
+      if (!hasRole) {
+        // Assign the role
+        await this.assignRoleToEmployee({
+          roleId: matchingRole.id,
+          employeeId: employee.id,
+          grantedBy: employee.id, // Self-assigned during sync
+        });
+        
+        this.logger.log(`Auto-assigned RBAC role '${matchingRole.name}' to employee ${employee.id}`);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error syncing user role';
+      this.logger.error(`Error syncing user role: ${errorMessage}`);
+    }
   }
 } 

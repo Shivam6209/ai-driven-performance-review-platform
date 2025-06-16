@@ -32,55 +32,6 @@ export class ReviewsController {
     });
   }
 
-  // AI Review Generation Endpoints
-  @Post('generate-ai')
-  @RequirePermissions('reviews', 'create')
-  async generateAIReview(@Body() generateDto: {
-    employeeId: string;
-    reviewerId?: string;
-    reviewCycleId: string;
-    reviewType: 'self' | 'manager' | 'peer' | '360' | 'upward';
-  }, @Request() req: any) {
-    return this.reviewsService.generateAIReview(
-      generateDto.employeeId,
-      generateDto.reviewerId || req.user.employeeId,
-      generateDto.reviewCycleId,
-      generateDto.reviewType,
-      req.user.organizationId
-    );
-  }
-
-  @Put(':id/edit-ai')
-  @RequirePermissions('reviews', 'update')
-  async editAIReview(
-    @Param('id') id: string,
-    @Body() updates: any,
-    @Request() req: any
-  ) {
-    return this.reviewsService.editAIReview(
-      id,
-      updates,
-      req.user.employeeId,
-      req.user.organizationId
-    );
-  }
-
-  @Post(':id/submit')
-  @RequirePermissions('reviews', 'update')
-  async submitReview(@Param('id') id: string) {
-    return this.reviewsService.submitReview(id);
-  }
-
-  @Post(':id/approve')
-  @RequirePermissions('reviews', 'approve')
-  async approveReview(@Param('id') id: string, @Request() req: any) {
-    return this.reviewsService.approveReview(
-      id,
-      req.user.userId,
-      req.user.organizationId
-    );
-  }
-
   @Get()
   @RequirePermissions('reviews', 'read')
   async findAllPerformanceReviews(@Query() query: any, @Request() req: any) {

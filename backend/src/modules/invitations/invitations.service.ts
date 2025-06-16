@@ -7,6 +7,7 @@ import { UserRole } from '../auth/enums/user-role.enum';
 import { User } from '../auth/entities/user.entity';
 import { Employee } from '../employees/entities/employee.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { RbacService } from '../rbac/rbac.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 
@@ -32,6 +33,7 @@ export class InvitationsService {
     private employeeRepository: Repository<Employee>,
     private organizationsService: OrganizationsService,
     private notificationsService: NotificationsService,
+    private rbacService: RbacService,
   ) {}
 
   async create(createInvitationDto: CreateInvitationDto): Promise<Invitation> {
@@ -87,6 +89,7 @@ export class InvitationsService {
       lastName: createInvitationDto.lastName || 'User',
       email: createInvitationDto.email,
       jobTitle: createInvitationDto.jobTitle,
+      role: createInvitationDto.role || 'employee', // Role selected by admin/HR in invitation UI
       organizationId: createInvitationDto.organizationId,
       employmentStatus: 'active',
       isActive: true,
@@ -100,6 +103,14 @@ export class InvitationsService {
 
     console.log(`✅ Created user account for ${createInvitationDto.email} with role ${createInvitationDto.role}`);
     console.log(`✅ Created employee profile with ID: ${savedEmployee.id}`);
+    
+    // Auto-assign RBAC role based on user role
+    try {
+      await this.rbacService.syncUserRole(savedUser.id, savedUser.role);
+      console.log(`✅ Auto-assigned RBAC role '${savedUser.role}' to invited user ${savedUser.email}`);
+    } catch (error) {
+      console.error(`❌ Failed to assign RBAC role to invited user ${savedUser.email}:`, error);
+    }
     
     // Create invitation with 7 days expiry and ensure all required fields are set
     const invitation = this.invitationRepository.create({

@@ -26,6 +26,7 @@ class AuthService {
   private readonly BASE_URL = '/auth';
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    console.log('🔐 AuthService - Login attempt for:', credentials.email);
     try {
       // Call backend API for authentication
       const response = await apiService.post<{access_token: string, user: any}>(`${this.BASE_URL}/login`, {
@@ -34,10 +35,18 @@ class AuthService {
       });
 
       const { access_token, user: backendUser } = response.data;
+      console.log('✅ Login successful, received user:', {
+        id: backendUser.id,
+        email: backendUser.email,
+        role: backendUser.role,
+        firstName: backendUser.firstName,
+        lastName: backendUser.lastName
+      });
       
       // Store token in localStorage for API requests
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', access_token);
+        console.log('🔑 Token stored in localStorage');
       }
 
       // Transform backend user to frontend User type
@@ -54,11 +63,13 @@ class AuthService {
         organizationId: backendUser.organizationId,
       };
 
+      console.log('👤 Transformed user object:', user);
       return {
         token: access_token,
         user
       };
     } catch (error: any) {
+      console.log('❌ Login failed:', error.response?.data || error.message);
       throw new Error(error.response?.data?.message || error.message || 'Login failed');
     }
   }
@@ -192,8 +203,21 @@ class AuthService {
   }
 
   async getCurrentUser(): Promise<User> {
-    const response = await apiService.get<User>(`${this.BASE_URL}/me`);
-    return response.data;
+    console.log('🔍 AuthService - Getting current user...');
+    try {
+      const response = await apiService.get<User>(`${this.BASE_URL}/me`);
+      console.log('✅ Current user retrieved:', {
+        id: response.data.id,
+        email: response.data.email,
+        role: response.data.role,
+        firstName: response.data.firstName,
+        lastName: response.data.lastName
+      });
+      return response.data;
+    } catch (error) {
+      console.log('❌ Failed to get current user:', error);
+      throw error;
+    }
   }
 
   async requestPasswordReset(data: PasswordResetRequest): Promise<void> {

@@ -12,10 +12,54 @@ const apiClient = axios.create({
 
 // Add auth token to requests
 apiClient.interceptors.request.use((config) => {
-  // Note: This service is deprecated in favor of Firebase data service
-  // For new implementations, use firebaseDataService instead
+  const token = localStorage.getItem('auth_token');
+  console.log('🌐 API Request:', {
+    method: config.method?.toUpperCase(),
+    url: config.url,
+    baseURL: config.baseURL,
+    fullURL: `${config.baseURL}${config.url}`,
+    hasToken: !!token,
+    headers: config.headers
+  });
+  
+  if (token) {
+    if (config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    console.log('🔑 Added auth token to request');
+  } else {
+    console.log('⚠️ No auth token found for request');
+  }
+  
   return config;
 });
+
+// Add response interceptor for debugging
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log('✅ API Response Success:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    console.log('❌ API Response Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.message,
+      data: error.response?.data
+    });
+    
+    if (error.response?.status === 401) {
+      console.log('🚨 401 Unauthorized - Token may be invalid or expired');
+      console.log('🔑 Current token:', localStorage.getItem('auth_token'));
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // Types
 interface PerformanceReview {

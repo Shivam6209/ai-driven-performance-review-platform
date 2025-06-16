@@ -70,17 +70,26 @@ async function bootstrapRbac() {
       }
     }
 
-    // Create basic roles
+    // Create basic roles that match UserRole enum
     const roles = [
       {
-        name: 'HR Admin',
-        description: 'Full access to all HR functions',
+        name: 'admin',
+        description: 'System administrator with full access',
         permissionIds: createdPermissions.map(p => p.id), // All permissions
         is_system_role: true,
         is_custom: false,
       },
       {
-        name: 'Manager',
+        name: 'hr',
+        description: 'HR personnel with HR management capabilities',
+        permissionIds: createdPermissions
+          .filter(p => !p.name.includes('delete') || p.resource === 'employees')
+          .map(p => p.id),
+        is_system_role: true,
+        is_custom: false,
+      },
+      {
+        name: 'manager',
         description: 'Manager with team oversight capabilities',
         permissionIds: createdPermissions
           .filter(p => !p.name.includes('delete') && !p.name.includes('rbac'))
@@ -89,7 +98,7 @@ async function bootstrapRbac() {
         is_custom: false,
       },
       {
-        name: 'Employee',
+        name: 'employee',
         description: 'Basic employee access',
         permissionIds: createdPermissions
           .filter(p => p.action === 'read' || (p.resource === 'feedback' && p.action === 'write'))

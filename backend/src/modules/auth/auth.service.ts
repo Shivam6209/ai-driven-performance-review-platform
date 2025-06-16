@@ -19,6 +19,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserRole } from './enums/user-role.enum';
 import { InvitationStatus } from '../invitations/entities/invitation.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { RbacService } from '../rbac/rbac.service';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +36,7 @@ export class AuthService {
     private departmentRepository: Repository<Department>,
     private jwtService: JwtService,
     private notificationsService: NotificationsService,
+    private rbacService: RbacService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -171,6 +173,7 @@ export class AuthService {
       lastName: registerData.lastName,
       email: registerData.email,
       jobTitle: registerData.jobTitle,
+      role: registerData.role as 'admin' | 'hr' | 'manager' | 'employee', // Role from registration form
       departmentId: registerData.departmentId,
       managerId: registerData.managerId,
       employmentStatus: 'active',
@@ -183,6 +186,14 @@ export class AuthService {
     await this.usersRepository.update(savedUser.id, {
       employeeId: savedEmployee.id,
     });
+
+    // Auto-assign RBAC role based on user role
+    try {
+      await this.rbacService.syncUserRole(savedUser.id, savedUser.role);
+      console.log(`✅ Auto-assigned RBAC role '${savedUser.role}' to registered user ${savedUser.email}`);
+    } catch (error) {
+      console.error(`❌ Failed to assign RBAC role to registered user ${savedUser.email}:`, error);
+    }
 
     const { password: _, ...user } = savedUser;
     
@@ -228,10 +239,23 @@ export class AuthService {
       throw new BadRequestException('Email already in use');
     }
 
-    // Create organization first
+    // Create organization first - ensure unique domain
+    const baseDomain = registerAdminDto.email.split('@')[1];
+    let uniqueDomain = baseDomain;
+    
+    // Check if domain already exists and make it unique if needed
+    const existingOrg = await this.organizationRepository.findOne({
+      where: { domain: baseDomain }
+    });
+    
+    if (existingOrg) {
+      // Make domain unique by adding timestamp
+      uniqueDomain = `${baseDomain}-${Date.now()}`;
+    }
+    
     const organization = this.organizationRepository.create({
       name: registerAdminDto.organizationName,
-      domain: registerAdminDto.email.split('@')[1], // Use email domain as organization domain
+      domain: uniqueDomain,
     });
     const savedOrganization = await this.organizationRepository.save(organization);
 
@@ -262,6 +286,7 @@ export class AuthService {
       lastName: registerAdminDto.lastName,
       email: registerAdminDto.email,
       jobTitle: registerAdminDto.jobTitle,
+      role: savedUser.role as 'admin' | 'hr' | 'manager' | 'employee', // Admin role assigned automatically for organization creators
       departmentId: savedHrDepartment.id,
       organizationId: savedOrganization.id,
       employmentStatus: 'active',
@@ -278,6 +303,14 @@ export class AuthService {
     await this.departmentRepository.update(savedHrDepartment.id, {
       manager: savedEmployee,
     });
+
+    // Auto-assign RBAC role based on user role
+    try {
+      await this.rbacService.syncUserRole(savedUser.id, savedUser.role);
+      console.log(`✅ Auto-assigned RBAC role '${savedUser.role}' to admin user ${savedUser.email}`);
+    } catch (error) {
+      console.error(`❌ Failed to assign RBAC role to admin user ${savedUser.email}:`, error);
+    }
 
     // Generate JWT token
     const payload = {
@@ -355,6 +388,7 @@ export class AuthService {
       lastName: invitation.lastName || 'User',
       email: invitation.email,
       jobTitle: invitation.jobTitle,
+      role: invitation.role || 'employee', // Role selected by admin/HR in invitation UI
       organizationId: invitation.organizationId,
       employmentStatus: 'active',
       isActive: true,
@@ -370,6 +404,14 @@ export class AuthService {
     await this.invitationRepository.update(invitation.id, {
       status: InvitationStatus.ACCEPTED,
     });
+
+    // Auto-assign RBAC role based on user role
+    try {
+      await this.rbacService.syncUserRole(savedUser.id, savedUser.role);
+      console.log(`✅ Auto-assigned RBAC role '${savedUser.role}' to invited user ${savedUser.email}`);
+    } catch (error) {
+      console.error(`❌ Failed to assign RBAC role to invited user ${savedUser.email}:`, error);
+    }
 
     // Generate JWT token
     const payload = {

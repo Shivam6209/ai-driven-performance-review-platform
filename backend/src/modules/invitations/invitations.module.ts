@@ -7,12 +7,14 @@ import { InvitationsService } from './invitations.service';
 import { InvitationsController } from './invitations.controller';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { RbacModule } from '../rbac/rbac.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Invitation, User, Employee]),
     OrganizationsModule,
     NotificationsModule,
+    RbacModule,
   ],
   controllers: [InvitationsController],
   providers: [InvitationsService],

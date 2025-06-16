@@ -44,7 +44,17 @@ export class RbacGuard implements CanActivate {
       contextId = params.teamId;
     }
 
-    // Check if user has the required permission
-    return this.rbacService.hasPermission(user.id, resource, action, contextId);
+    // Auto-sync user role if needed
+    if (user.role) {
+      await this.rbacService.syncUserRole(user.id, user.role);
+    }
+
+    // Check if user has the required permission using employeeId
+    if (!user.employeeId) {
+      console.error(`❌ User ${user.email} has no employeeId - cannot check RBAC permissions`);
+      return false;
+    }
+
+    return this.rbacService.hasPermission(user.employeeId, resource, action, contextId);
   }
 } 

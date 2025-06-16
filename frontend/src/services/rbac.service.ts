@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { API_URL } from '../config';
+import { apiService } from './api';
 import {
   Role,
   Permission,
@@ -11,74 +10,74 @@ import {
   CreatePermissionDto,
 } from '../types/rbac';
 
-const API_ENDPOINT = `${API_URL}/rbac`;
+const API_ENDPOINT = '/rbac';
 
 export const RbacService = {
   // Role methods
   async createRole(roleData: CreateRoleDto): Promise<Role> {
-    const response = await axios.post<Role>(`${API_ENDPOINT}/roles`, roleData);
+    const response = await apiService.post<Role>(`${API_ENDPOINT}/roles`, roleData);
     return response.data;
   },
 
   async getAllRoles(): Promise<Role[]> {
-    const response = await axios.get<Role[]>(`${API_ENDPOINT}/roles`);
+    const response = await apiService.get<Role[]>(`${API_ENDPOINT}/roles`);
     return response.data;
   },
 
   async getRoleById(id: string): Promise<Role> {
-    const response = await axios.get<Role>(`${API_ENDPOINT}/roles/${id}`);
+    const response = await apiService.get<Role>(`${API_ENDPOINT}/roles/${id}`);
     return response.data;
   },
 
   async updateRole(id: string, roleData: UpdateRoleDto): Promise<Role> {
-    const response = await axios.patch<Role>(`${API_ENDPOINT}/roles/${id}`, roleData);
+    const response = await apiService.patch<Role>(`${API_ENDPOINT}/roles/${id}`, roleData);
     return response.data;
   },
 
   async deleteRole(id: string): Promise<void> {
-    await axios.delete(`${API_ENDPOINT}/roles/${id}`);
+    await apiService.delete(`${API_ENDPOINT}/roles/${id}`);
   },
 
   async getRoleHierarchy(id: string): Promise<Role[]> {
-    const response = await axios.get<Role[]>(`${API_ENDPOINT}/roles/${id}/hierarchy`);
+    const response = await apiService.get<Role[]>(`${API_ENDPOINT}/roles/${id}/hierarchy`);
     return response.data;
   },
 
   // Permission methods
   async createPermission(permissionData: CreatePermissionDto): Promise<Permission> {
-    const response = await axios.post<Permission>(`${API_ENDPOINT}/permissions`, permissionData);
+    const response = await apiService.post<Permission>(`${API_ENDPOINT}/permissions`, permissionData);
     return response.data;
   },
 
   async getAllPermissions(): Promise<Permission[]> {
-    const response = await axios.get<Permission[]>(`${API_ENDPOINT}/permissions`);
+    const response = await apiService.get<Permission[]>(`${API_ENDPOINT}/permissions`);
     return response.data;
   },
 
   // Role assignment methods
   async assignRole(assignmentData: AssignRoleDto): Promise<RoleAssignment> {
-    const response = await axios.post<RoleAssignment>(`${API_ENDPOINT}/assignments`, assignmentData);
+    const response = await apiService.post<RoleAssignment>(`${API_ENDPOINT}/assignments`, assignmentData);
     return response.data;
   },
 
   async assignRoleToEmployee(assignmentData: AssignRoleDto): Promise<RoleAssignment> {
-    const response = await axios.post<RoleAssignment>(`${API_ENDPOINT}/assignments`, assignmentData);
+    const response = await apiService.post<RoleAssignment>(`${API_ENDPOINT}/assignments`, assignmentData);
     return response.data;
   },
 
   async revokeRoleFromEmployee(assignmentId: string): Promise<void> {
-    await axios.delete(`${API_ENDPOINT}/assignments/${assignmentId}`);
+    await apiService.delete(`${API_ENDPOINT}/assignments/${assignmentId}`);
   },
 
   async getEmployeeRoles(employeeId: string): Promise<RoleAssignment[]> {
-    const response = await axios.get<RoleAssignment[]>(
+    const response = await apiService.get<RoleAssignment[]>(
       `${API_ENDPOINT}/employees/${employeeId}/roles`
     );
     return response.data;
   },
 
   async delegateRole(delegateData: DelegateRoleDto): Promise<RoleAssignment> {
-    const response = await axios.post<RoleAssignment>(`${API_ENDPOINT}/delegate`, delegateData);
+    const response = await apiService.post<RoleAssignment>(`${API_ENDPOINT}/delegate`, delegateData);
     return response.data;
   },
 
@@ -88,16 +87,50 @@ export const RbacService = {
     action: string,
     contextId?: string
   ): Promise<{ hasPermission: boolean }> {
-    const params = new URLSearchParams();
-    params.append('resource', resource);
-    params.append('action', action);
+    const params: any = { resource, action };
     if (contextId) {
-      params.append('contextId', contextId);
+      params.contextId = contextId;
     }
 
-    const response = await axios.get<{ hasPermission: boolean }>(
-      `${API_ENDPOINT}/check-permission?${params.toString()}`
+    const response = await apiService.get<{ hasPermission: boolean }>(
+      `${API_ENDPOINT}/check-permission`, params
     );
     return response.data;
+  },
+
+  // User permission management
+  async updateUserPermissions(
+    employeeId: string,
+    permissions: Array<{ resource: string; action: string; granted: boolean }>
+  ): Promise<any> {
+    const response = await apiService.post(`${API_ENDPOINT}/user-permissions`, {
+      employeeId,
+      permissions,
+    });
+    return response.data;
+  },
+
+  async getUserPermissions(employeeId: string): Promise<any[]> {
+    const response = await apiService.get<any[]>(`${API_ENDPOINT}/user-permissions/${employeeId}`);
+    return response.data;
+  },
+
+  async getAllUserPermissions(employeeId: string): Promise<{
+    rolePermissions: Array<{ resource: string; action: string; source: string }>;
+    userPermissions: Array<{ resource: string; action: string; granted: boolean }>;
+  }> {
+    const response = await apiService.get<{
+      rolePermissions: Array<{ resource: string; action: string; source: string }>;
+      userPermissions: Array<{ resource: string; action: string; granted: boolean }>;
+    }>(`${API_ENDPOINT}/all-permissions/${employeeId}`);
+    return response.data;
+  },
+
+  async removeUserPermission(
+    employeeId: string,
+    resource: string,
+    action: string
+  ): Promise<void> {
+    await apiService.delete(`${API_ENDPOINT}/user-permissions/${employeeId}/${resource}/${action}`);
   },
 }; 

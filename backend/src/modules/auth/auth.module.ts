@@ -10,6 +10,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { FirebaseJwtStrategy } from './strategies/firebase-jwt.strategy';
 import { EmployeesModule } from '../employees/employees.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { RbacModule } from '../rbac/rbac.module';
 import { User } from './entities/user.entity';
 import { Employee } from '../employees/entities/employee.entity';
 import { Organization } from '../organizations/entities/organization.entity';
@@ -32,6 +33,7 @@ import { Department } from '../departments/entities/department.entity';
     }),
     EmployeesModule,
     NotificationsModule,
+    RbacModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, LocalStrategy, FirebaseJwtStrategy],

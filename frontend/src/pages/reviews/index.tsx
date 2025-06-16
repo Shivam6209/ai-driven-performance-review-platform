@@ -56,6 +56,7 @@ import Layout from '@/components/layout/Layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { reviewsService } from '@/services/reviewsService';
 import { UserRole } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PerformanceReview {
   id: string;
@@ -127,6 +128,7 @@ interface AIGenerationDialog {
 }
 
 export default function ReviewsPage(): JSX.Element {
+  const { currentUser } = useAuth();
   const [currentTab, setCurrentTab] = useState(0);
   const [reviews, setReviews] = useState<PerformanceReview[]>([]);
   const [cycles, setCycles] = useState<ReviewCycle[]>([]);
@@ -134,6 +136,23 @@ export default function ReviewsPage(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+
+  // Debug: Log current user on component mount and when it changes
+  useEffect(() => {
+    console.log('📊 Reviews Page - Component mounted/updated');
+    console.log('👤 Current User in Reviews Page:', currentUser);
+    if (currentUser) {
+      console.log('✅ User is authenticated:', {
+        id: currentUser.id,
+        email: currentUser.email,
+        role: currentUser.role,
+        firstName: currentUser.firstName,
+        lastName: currentUser.lastName
+      });
+    } else {
+      console.log('❌ No current user in Reviews Page');
+    }
+  }, [currentUser]);
   
   // Pagination
   const [page, setPage] = useState<number>(0);
@@ -160,30 +179,44 @@ export default function ReviewsPage(): JSX.Element {
   // Load data based on current tab
   const loadData = async () => {
     try {
+      console.log('📊 Reviews Page - Loading data...');
+      console.log('📑 Current Tab:', currentTab);
+      console.log('📄 Page:', page, 'Rows per page:', rowsPerPage);
+      
       setLoading(true);
       setError('');
       
       switch (currentTab) {
         case 0: // Reviews
+          console.log('📋 Loading performance reviews...');
           const reviewsData = await reviewsService.getAllPerformanceReviews({
             page: page + 1,
             limit: rowsPerPage,
           });
+          console.log('✅ Reviews loaded:', reviewsData.length, 'items');
           setReviews(reviewsData);
           break;
         case 1: // Cycles
+          console.log('🔄 Loading review cycles...');
           const cyclesData = await reviewsService.getAllReviewCycles();
+          console.log('✅ Cycles loaded:', cyclesData.length, 'items');
           setCycles(cyclesData);
           break;
         case 2: // Templates
+          console.log('📝 Loading review templates...');
           const templatesData = await reviewsService.getAllReviewTemplates();
+          console.log('✅ Templates loaded:', templatesData.length, 'items');
           setTemplates(templatesData);
           break;
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load data');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
+      console.log('❌ Failed to load data:', errorMessage);
+      console.log('🔍 Error details:', err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
+      console.log('🏁 Data loading completed');
     }
   };
 
@@ -756,6 +789,22 @@ export default function ReviewsPage(): JSX.Element {
       <Layout>
         <Container maxWidth="xl">
           <Box sx={{ py: 4 }}>
+            {/* Debug Panel - Remove this in production */}
+            {process.env.NODE_ENV === 'development' && (
+              <Paper sx={{ p: 2, mb: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
+                <Typography variant="h6" gutterBottom>🐛 Debug Info</Typography>
+                <Typography variant="body2">
+                  <strong>Current User:</strong> {currentUser ? `${currentUser.email} (${currentUser.role})` : 'Not authenticated'}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Auth Token:</strong> {typeof window !== 'undefined' && localStorage.getItem('auth_token') ? 'Present' : 'Missing'}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>API URL:</strong> {process.env.NEXT_PUBLIC_API_URL || 'Not set'}
+                </Typography>
+              </Paper>
+            )}
+
             {/* Header */}
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
               <Typography variant="h4" component="h1" fontWeight="bold">
